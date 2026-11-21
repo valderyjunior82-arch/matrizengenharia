@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matriz Obra · Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* paleta do usuário */
+  --ink:#26333A; --slate:#4A5A63; --bg:#F2F4F5; --teal:#00A3B4; --red:#E2574C;
+  /* derivadas */
+  --card:#FFFFFF; --line:#DCE1E4; --line2:#E9EDEF; --muted:#56656D;
+  --ink-2:#1B262C; --teal-ink:#00727E; --teal-tint:#E0F4F6;
+  --red-ink:#B5382E; --red-tint:#FCEDEB;
+  --amb:#E8A317; --amb-ink:#7F5400; --amb-tint:#FFF3D6;
+  --grn:#2E9E6B; --grn-ink:#1B6B45; --grn-tint:#E3F4EB;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --sans:"IBM Plex Sans",system-ui,"Segoe UI",Roboto,Arial,sans-serif;
+  --r:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.35;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.mono{font-family:var(--mono);text-transform:uppercase;letter-spacing:.07em;font-size:12px;font-weight:600}
+
+/* faixa do mockup */
+.mock{background:var(--teal-tint);color:var(--teal-ink);font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.04em;padding:8px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-bottom:1px solid #BFE6EB}
+.mock button{text-decoration:underline;font-weight:600;min-height:32px}
+
+/* estrutura */
+.app{min-height:100vh}
+.side{display:none}
+.main{padding-bottom:150px;min-width:0}
+.top{background:var(--ink);color:#fff}
+.top-in{padding:14px 16px 12px;display:flex;gap:12px;align-items:flex-start}
+.mark{width:22px;height:22px;border-radius:4px;background:var(--teal);flex:none;margin-top:3px}
+.obra{flex:1;min-width:0}
+.obra h1{font-size:19px;font-weight:600;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.obra .sub{color:#B9C5CB;margin-top:3px;font-size:11.5px}
+.trocar{background:#3A4952;color:#fff;border-radius:4px;padding:0 12px;min-height:44px;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.07em;display:flex;align-items:center;gap:6px;flex:none}
+.trocar:hover{background:#465761}
+.back{display:flex;align-items:center;gap:6px;min-height:44px;color:#fff;font-weight:600;padding-right:8px}
+.tabs{display:flex;gap:4px;padding:0 10px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{min-height:44px;padding:0 10px;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.07em;color:#B9C5CB;border-bottom:3px solid transparent;white-space:nowrap}
+.tab.on{color:#fff;border-bottom-color:var(--teal)}
+.tab .n{opacity:.8;margin-left:4px}
+
+.view{padding:12px;display:grid;gap:10px;max-width:1180px}
+
+/* cartões */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+.ch{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line2);min-height:44px}
+.ch .mono{color:var(--slate)}
+.link{color:var(--teal-ink);font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.07em;min-height:44px;display:inline-flex;align-items:center;padding:0 2px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--slate);border-radius:var(--r);padding:10px 10px 12px;text-align:left;min-height:44px}
+.stat .mono{color:var(--slate);font-size:11px}
+.stat .num{font-size:44px;font-weight:600;line-height:1;margin:8px 0 6px;font-variant-numeric:tabular-nums}
+.stat .ft{font-size:12px;color:var(--muted);line-height:1.3}
+.stat.red{border-top-color:var(--red)} .stat.red .num{color:var(--red-ink)}
+.stat.amb{border-top-color:var(--amb)} .stat.amb .num{color:var(--amb-ink)}
+.stat.teal{border-top-color:var(--teal)} .stat.teal .num{color:var(--teal-ink)}
+.stat.grn{border-top-color:var(--grn)} .stat.grn .num{color:var(--grn-ink)}
+
+/* barra de avanço */
+.prog{padding:12px 14px 14px}
+.prog .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.prog .big{font-size:28px;font-weight:600;font-variant-numeric:tabular-nums}
+.bar{position:relative;height:10px;background:var(--line2);border-radius:5px;margin:10px 0 8px}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--teal);border-radius:5px}
+.bar b{position:absolute;top:-5px;bottom:-5px;width:3px;background:var(--ink);border-radius:2px}
+.prog .legend{display:flex;justify-content:space-between;color:var(--muted);font-size:11px}
+
+/* linhas de lista */
+.li{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:12px 14px;border-bottom:1px solid var(--line2);min-height:64px;position:relative}
+.li:last-child{border-bottom:0}
+button.li:hover{background:#F7F9FA}
+.li::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:transparent}
+.li.red{background:var(--red-tint)} .li.red::before{background:var(--red)}
+.li.amb::before{background:var(--amb)}
+.li.grn::before{background:var(--grn)}
+.li .b{flex:1;min-width:0}
+.li .t{font-size:16px;font-weight:600;line-height:1.25}
+.li .m{color:var(--muted);margin-top:4px;font-size:11.5px}
+.li .r{flex:none;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.li .s{font-size:12.5px;color:var(--muted)}
+.li .s strong{color:var(--ink);font-size:15px}
+
+.chip{display:inline-flex;align-items:center;font-family:var(--mono);font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 7px;border-radius:3px;white-space:nowrap;border:1px solid transparent}
+.chip.red{background:var(--red-ink);color:#fff}
+.chip.amb{background:var(--amb-tint);color:var(--amb-ink);border-color:#F2D38A}
+.chip.grn{background:var(--grn-tint);color:var(--grn-ink);border-color:#B8E0CA}
+.chip.teal{background:var(--teal-tint);color:var(--teal-ink);border-color:#B5E3E9}
+.chip.gray{background:var(--line2);color:var(--slate)}
+
+.mini{height:6px;background:var(--line2);border-radius:3px;width:84px;overflow:hidden}
+.mini i{display:block;height:100%;background:var(--teal)}
+
+/* botões */
+.btn{min-height:44px;padding:0 16px;border-radius:5px;font-weight:600;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.pri{background:var(--teal);color:var(--ink-2)}
+.btn.pri:hover{background:#00B4C6}
+.btn.sec{background:#fff;border:1.5px solid var(--slate);color:var(--ink)}
+.btn.dark{background:var(--ink);color:#fff}
+.btn.full{width:100%}
+.btn.lg{min-height:56px;font-size:17px}
+
+.aprovar{padding:12px 14px;display:grid;gap:10px}
+.aprovar .acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.duo .card{padding:10px 12px;text-align:left;min-height:64px}
+.duo .mono{color:var(--slate);font-size:11px}
+.duo .v{font-weight:600;margin-top:5px}
+.duo .v.red{color:var(--red-ink)} .duo .v.amb{color:var(--amb-ink)} .duo .v.grn{color:var(--grn-ink)}
+
+.fin{display:grid;grid-template-columns:1fr 1fr}
+.fin > div{padding:12px 14px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2)}
+.fin > div:nth-child(2n){border-right:0}
+.fin > div:nth-last-child(-n+2){border-bottom:0}
+.fin .mono{color:var(--slate);font-size:11px}
+.fin .v{font-size:21px;font-weight:600;margin-top:6px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fin .x{font-size:12.5px;color:var(--red-ink);font-weight:600;margin-top:3px}
+
+/* fotos (marcadores de lugar) */
+.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:12px 14px}
+.ph{aspect-ratio:1;border-radius:4px;position:relative;overflow:hidden;background:repeating-linear-gradient(135deg,#D3DADE 0 9px,#C9D1D6 9px 18px);display:flex;align-items:flex-end}
+.ph.t2{background:repeating-linear-gradient(45deg,#CFD8D3 0 9px,#C3CEC8 9px 18px)}
+.ph.t3{background:repeating-linear-gradient(135deg,#DCD6CE 0 9px,#D1CAC1 9px 18px)}
+.ph span{background:rgba(38,51,58,.86);color:#fff;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:3px 5px;margin:5px;border-radius:2px;max-width:calc(100% - 10px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dayh{padding:12px 14px 0;color:var(--slate)}
+
+/* chips de filtro */
+.filters{display:flex;gap:6px;overflow-x:auto;padding:2px 0;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.fchip{min-height:44px;padding:0 14px;border-radius:22px;border:1.5px solid var(--line);background:#fff;font-weight:500;white-space:nowrap;font-size:15px}
+.fchip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+.group summary{list-style:none;cursor:pointer}
+.group summary::-webkit-details-marker{display:none}
+.group summary .ch{border-bottom:1px solid var(--line2)}
+.group:not([open]) summary .ch{border-bottom:0}
+.caret{transition:transform .15s;display:inline-block}
+.group[open] .caret{transform:rotate(90deg)}
+
+/* detalhe */
+.dhead{padding:14px}
+.dhead h2{font-size:22px;font-weight:600;line-height:1.2}
+.dhead .m{color:var(--muted);margin-top:6px}
+.kv{display:grid;grid-template-columns:1fr 1fr}
+.kv > div{padding:10px 14px;border-top:1px solid var(--line2)}
+.kv > div:nth-child(odd){border-right:1px solid var(--line2)}
+.kv .mono{color:var(--slate);font-size:11px}
+.kv .v{font-weight:600;margin-top:3px}
+.seg{display:flex;border-bottom:1px solid var(--line2);overflow-x:auto}
+.seg button{flex:1;min-height:48px;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.07em;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap;padding:0 10px}
+.seg button.on{color:var(--ink);border-bottom-color:var(--teal)}
+.entry{padding:12px 14px;border-bottom:1px solid var(--line2)}
+.entry:last-child{border-bottom:0}
+.entry .m{color:var(--muted);font-size:11.5px;margin-top:4px}
+.entry .tx{font-size:16px;margin-top:2px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 14px;border-top:1px solid var(--line2)}
+
+/* diário de hoje */
+.hoje{background:var(--ink);color:#fff;border-radius:var(--r);padding:14px;display:grid;gap:12px}
+.hoje .mono{color:#9FD9E0}
+.hoje h2{font-size:20px;font-weight:600}
+.hoje p{color:#C9D3D8;font-size:15px}
+
+/* estado vazio */
+.empty{padding:40px 20px 36px;text-align:center;display:grid;justify-items:center;gap:12px}
+.empty .ic{width:72px;height:72px;border-radius:50%;background:var(--teal-tint);color:var(--teal-ink);display:grid;place-items:center}
+.empty h3{font-size:19px;font-weight:600;max-width:320px}
+.empty p{color:var(--muted);max-width:340px;font-size:15px}
+.empty .btn{margin-top:6px}
+
+/* navegação inferior */
+.bnav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);z-index:20;padding-bottom:env(safe-area-inset-bottom)}
+.bnav button{min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--muted);font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border-top:3px solid transparent}
+.bnav button.on{color:var(--teal-ink);border-top-color:var(--teal)}
+.fab{position:fixed;right:14px;bottom:78px;z-index:21;background:var(--teal);color:var(--ink-2);min-height:52px;padding:0 18px 0 14px;border-radius:26px;font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(38,51,58,.28)}
+
+/* folha de troca de obra */
+.veil{position:fixed;inset:0;background:rgba(20,28,32,.55);z-index:40;display:none;align-items:flex-end;justify-content:center}
+.veil.on{display:flex}
+.sheet{background:#fff;width:100%;max-width:520px;border-radius:12px 12px 0 0;padding:8px 0 16px}
+.sheet .ch{border-bottom:1px solid var(--line2)}
+.opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:14px 16px;min-height:64px;border-bottom:1px solid var(--line2)}
+.opt .dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--slate);flex:none}
+.opt.on .dot{border:6px solid var(--teal)}
+
+.toast{position:fixed;left:50%;bottom:150px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 16px;border-radius:6px;font-size:14.5px;opacity:0;pointer-events:none;transition:.2s;z-index:50;max-width:calc(100% - 32px);text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%)}
+
+/* menu "Mais" */
+.mais .li{min-height:60px}
+
+/* ===== tela larga: menu lateral ===== */
+@media (min-width:900px){
+  .app{display:grid;grid-template-columns:252px 1fr}
+  .side{display:flex;flex-direction:column;position:sticky;top:0;height:100vh;background:var(--ink);color:#fff;padding:18px 12px;gap:4px;overflow-y:auto}
+  .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px;font-family:var(--mono);font-weight:600;letter-spacing:.12em;font-size:14px}
+  .brand i{width:18px;height:18px;background:var(--teal);border-radius:3px}
+  .snav{display:flex;align-items:center;gap:12px;min-height:46px;padding:0 12px;border-radius:5px;color:#C9D3D8;font-weight:500;text-align:left;width:100%}
+  .snav:hover{background:#2F3E46;color:#fff}
+  .snav.on{background:#33444D;color:#fff;box-shadow:inset 3px 0 0 var(--teal)}
+  .slabel{color:#8FA0A8;padding:18px 12px 6px;font-size:11px}
+  .side .grow{flex:1}
+  .side .btn.pri{margin:14px 4px 10px}
+  .me{display:flex;gap:10px;align-items:center;padding:12px 8px 0;border-top:1px solid #3A4952;margin-top:6px}
+  .me .av{width:36px;height:36px;border-radius:50%;background:#3A4952;display:grid;place-items:center;font-weight:600;font-size:14px}
+  .me small{display:block;color:#9FAEB5;font-size:12px}
+  .bnav,.fab{display:none}
+  .main{padding-bottom:40px}
+  .top-in{padding:18px 24px 14px}
+  .obra h1{font-size:22px}
+  .tabs{padding:0 18px}
+  .view{padding:18px 24px;gap:14px}
+  .stats{grid-template-columns:repeat(4,1fr);gap:12px}
+  .stat .num{font-size:52px}
+  .cols{display:grid;grid-template-columns:1.35fr 1fr;gap:14px;align-items:start}
+  .cols > div{display:grid;gap:14px}
+  .photos{grid-template-columns:repeat(5,1fr)}
+  .toast{bottom:32px}
+  .veil{align-items:center}
+  .sheet{border-radius:10px}
+}
+@media (max-width:899px){ .cols, .cols > div{display:grid;gap:10px} .stats .stat:nth-child(4){display:none} }
+@media (max-width:380px){ .stat .num{font-size:38px} .fin .v{font-size:18px} }
+</style>
+</head>
+<body>
+
+<div class="mock">
+  <span>MOCKUP · HOJE = 23/11/2026</span>
+  <button onclick="verVazio()">VER ESTADO VAZIO ›</button>
+</div>
+
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <div class="main">
+    <header class="top" id="top"></header>
+    <main class="view" id="view"></main>
+  </div>
+</div>
+
+<nav class="bnav" id="bnav"></nav>
+<button class="fab" onclick="toast('Lançar nota: formulário fica para a próxima rodada do mockup.')">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Lançar nota
+</button>
+
+<div class="veil" id="veil" onclick="if(event.target===this)fecharSheet()">
+  <div class="sheet" id="sheet"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- dados de exemplo (PRD-FRONTEND.md) ---------- */
+const HOJE = new Date(2026,10,23);
+const obras = [
+  {id:1, nome:'Apto 1802 – Ed. Jardins', cliente:'Dra. Helena Prado', ini:'2026-10-01', fim:'2026-12-18'},
+  {id:2, nome:'Apto 501 – Ed. Mirante', cliente:'Roberto e Clara', ini:'2026-11-02', fim:'2027-01-29'},
+];
+const frentes = [
+  {id:1,obra:1,serv:'Elétrica – infraestrutura',amb:'Geral',resp:'Eletro JR – Jefferson',ini:'2026-10-06',fim:'2026-10-31',lim:null,pct:100,sit:'Concluída',ult:'2026-10-30'},
+  {id:2,obra:1,serv:'Forro de gesso',amb:'Sala',resp:'Gesso Forte – Carlos',ini:'2026-11-03',fim:'2026-11-21',lim:'2026-11-18',pct:70,sit:'Em andamento',ult:'2026-11-17'},
+  {id:3,obra:1,serv:'Porcelanato 120×120',amb:'Sala',resp:'Pisos Prime – Marcos',ini:'2026-11-10',fim:'2026-12-05',lim:'2026-11-25',pct:40,sit:'Em andamento',ult:'2026-11-21'},
+  {id:4,obra:1,serv:'Marcenaria – cozinha',amb:'Cozinha',resp:'Marcenaria Bela',ini:'2026-12-01',fim:'2026-12-15',lim:'2026-11-24',limMot:'aprovar projeto executivo',pct:0,sit:'Não iniciada'},
+  {id:5,obra:1,serv:'Bancadas em quartzo',amb:'Cozinha',resp:'Marmoraria Ideal',ini:'2026-12-08',fim:'2026-12-12',lim:'2026-11-27',limMot:'medição no local',pct:0,sit:'Não iniciada'},
+  {id:6,obra:1,serv:'Impermeabilização',amb:'Banho suíte',resp:'Seu Antônio (equipe própria)',ini:'2026-11-09',fim:'2026-11-14',lim:null,pct:100,sit:'Aguardando aprovação',marcada:'2026-11-22',por:'Seu Antônio'},
+  {id:7,obra:1,serv:'Pintura',amb:'Quartos',resp:'Pinturas Silva',ini:'2026-11-16',fim:'2026-11-28',lim:'2026-11-20',pct:20,sit:'Parada',ult:'2026-11-16'},
+  {id:8,obra:2,serv:'Demolição de alvenaria',amb:'Cozinha',resp:'Seu Antônio (equipe própria)',ini:'2026-11-03',fim:'2026-11-10',lim:null,pct:100,sit:'Concluída',ult:'2026-11-10'},
+  {id:9,obra:2,serv:'Hidráulica – prumadas',amb:'Banho social',resp:'Hidro Max',ini:'2026-11-11',fim:'2026-11-28',lim:'2026-11-26',pct:50,sit:'Em andamento',ult:'2026-11-23'},
+];
+const contratos = {2:{emp:'Gesso Forte',val:18500,pago:9000},3:{emp:'Pisos Prime',val:22000,pago:6000},7:{emp:'Pinturas Silva',val:14800,pago:0}};
+const diario = [
+  {obra:1,data:'2026-11-21',tipo:'Avanço',frente:3,tx:'Assentadas 18 m² na sala, faltam rodapés',pct:40,por:'Seu Antônio',fotos:3},
+  {obra:1,data:'2026-11-21',tipo:'Equipe',tx:'Gesso 2, piso 3, pintura 0',por:'Seu Antônio',fotos:0},
+  {obra:1,data:'2026-11-21',tipo:'Ocorrência',tx:'Faltou argamassa AC-III às 14h, piso parou 1h',por:'Seu Antônio',fotos:1,amb:'Sala'},
+  {obra:1,data:'2026-11-17',tipo:'Avanço',frente:2,tx:'Tabicas da sala fechadas',pct:70,por:'Seu Antônio',fotos:2},
+  {obra:1,data:'2026-11-16',tipo:'Avanço',frente:7,tx:'Massa corrida no quarto 1',pct:20,por:'Seu Antônio',fotos:0},
+  {obra:2,data:'2026-11-23',tipo:'Avanço',frente:9,tx:'Prumadas de água fria e esgoto do banho social trocadas até o shaft',pct:50,por:'Seu Antônio',fotos:2},
+  {obra:2,data:'2026-11-23',tipo:'Equipe',tx:'Hidráulica 2, ajudante 1',por:'Seu Antônio',fotos:0},
+];
+const materiais = [
+  {id:1,obra:1,item:'Argamassa AC-III',qtd:'30 sc',frente:3,ate:'2026-11-24',sit:'Comprado',forn:'Leroy Merlin'},
+  {id:2,obra:1,item:'Rodapé poliestireno 10 cm',qtd:'42 m',frente:3,ate:'2026-11-27',sit:'A comprar',forn:null},
+  {id:3,obra:1,item:'Tinta acrílica fosca branco',qtd:'6 latas 18 L',frente:7,ate:'2026-11-20',sit:'A comprar',forn:null},
+  {id:4,obra:1,item:'Perfil de gesso F530',qtd:'60 un',frente:2,ate:'2026-11-12',sit:'Entregue',forn:'Gesso Forte'},
+];
+const financeiro = {
+  1:{ontem:1356.40,semana:0,saldo:59980,receber:28500,vencido:4500},
+  2:null
+};
+
+/* ---------- utilidades ---------- */
+const WD=['dom','seg','ter','qua','qui','sex','sáb'];
+const pad=n=>String(n).padStart(2,'0');
+const D=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const dif=(a,b)=>Math.round((a-b)/864e5);
+const fmt=s=>{const x=D(s);return pad(x.getDate())+'/'+pad(x.getMonth()+1)};
+const fmtL=s=>{const n=dif(HOJE,D(s));if(n===0)return 'Hoje';if(n===1)return 'Ontem';return WD[D(s).getDay()]+', '+fmt(s)};
+const brl=v=>'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const plural=(n,s,p)=>n+' '+(n===1?s:p);
+const F=id=>frentes.find(f=>f.id===id);
+
+function semAndar(f){
+  if(f.ult) return dif(HOJE,D(f.ult));
+  if(f.ini && D(f.ini)>HOJE) return null;
+  return f.ini?dif(HOJE,D(f.ini)):null;
+}
+function nivel(f){
+  if(f.sit==='Concluída'||f.sit==='Aguardando aprovação') return 'grn';
+  if(f.lim){const x=dif(D(f.lim),HOJE); if(x<0) return 'red'; if(x<=3) return 'amb';}
+  const s=semAndar(f); if(s!==null && s>=3) return 'amb';
+  return 'grn';
+}
+function limChip(f){
+  if(f.sit==='Aguardando aprovação') return `<span class="chip teal">aprovar</span>`;
+  if(f.sit==='Concluída') return `<span class="chip grn">concluída</span>`;
+  if(!f.lim) return `<span class="chip gray">sem limite</span>`;
+  const x=dif(D(f.lim),HOJE), n=nivel(f);
+  const t = x<0?`vencida ${-x}d`: x===0?'vence hoje': x===1?'amanhã':`em ${x} dias`;
+  return `<span class="chip ${n}">${t}</span>`;
+}
+function limTxt(f){
+  if(!f.lim) return 'Sem data limite';
+  const x=dif(D(f.lim),HOJE);
+  return x<0?`Vencida há ${plural(-x,'dia','dias')} (${fmt(f.lim)})`: x===0?'Vence hoje': x===1?`Vence amanhã (${fmt(f.lim)})`:`Vence em ${x} dias (${fmt(f.lim)})`;
+}
+function andarTxt(f){
+  if(f.sit==='Concluída') return 'concluída';
+  if(f.sit==='Aguardando aprovação') return 'pronta em '+fmt(f.marcada);
+  const s=semAndar(f);
+  if(s===null) return 'começa em '+fmt(f.ini);
+  if(s===0) return '<strong>andou hoje</strong>';
+  return `<strong>${s}</strong> ${s===1?'dia':'dias'} sem andar`;
+}
+
+const IC={
+  hoje:'<path d="M4 11.5 12 5l8 6.5V20h-5v-5H9v5H4z"/>',
+  frentes:'<path d="M5 6h14M5 12h14M5 18h9"/>',
+  diario:'<path d="M6 4h10a2 2 0 0 1 2 2v14H8a2 2 0 0 1-2-2zM6 18a2 2 0 0 1 2-2h10M10 8h5"/>',
+  materiais:'<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/>',
+  mais:'<circle cx="6" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18" cy="12" r="1.3"/>',
+  fin:'<path d="M4 7h16v11H4zM4 11h16M8 15h3"/>',
+  caixa:'<path d="M4 20V10M10 20V5M16 20v-7M21 20H3"/>',
+  obras:'<path d="M4 20V8l6-4 6 4v12M16 12h4v8M8 12h4M8 16h4"/>',
+  pessoas:'<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5a3 3 0 0 1 0 6M21 20c0-2.6-1.6-4.8-4-5.6"/>',
+  perfil:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>',
+  chev:'<path d="m9 6 6 6-6 6"/>',
+  back:'<path d="m15 6-6 6 6 6"/>',
+  cam:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+};
+const ico=(k,s=24)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k]}</svg>`;
+
+/* ---------- estado ---------- */
+const S={obra:1, tela:'hoje', frente:null, dia:null, tabDiario:'dias', tabMat:'A comprar', amb:'Todos', tabFrente:'avanco'};
+const obraAtual=()=>obras.find(o=>o.id===S.obra);
+const NAV=[['hoje','Hoje'],['frentes','Frentes'],['diario','Diário'],['materiais','Materiais'],['mais','Mais']];
+const MAIS=[['fin','Financeiro'],['caixa','Caixa geral'],['obras','Obras'],['pessoas','Pessoas'],['perfil','Meu perfil']];
+
+function ir(tela,extra={}){Object.assign(S,{tela},extra);render();window.scrollTo(0,0)}
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),2600)}
+function verVazio(){S.obra=2;S.tabMat='A comprar';ir('materiais');toast('Obra trocada para Apto 501 – Ed. Mirante, que ainda não tem material.')}
+
+/* ---------- moldura ---------- */
+function renderSide(){
+  const nav=(k,l,on)=>`<button class="snav ${on?'on':''}" onclick="${['hoje','frentes','diario','materiais'].includes(k)?`ir('${k}')`:`toast('${l}: fora deste mockup.')`}">${ico(k==='mais'?'fin':k,22)}${l}</button>`;
+  const base=['hoje','frentes','diario','materiais'];
+  const atual = S.tela==='frente'?'frentes': S.tela==='dia'?'diario': S.tela;
+  document.getElementById('side').innerHTML=`
+    <div class="brand"><i></i>MATRIZ OBRA</div>
+    ${NAV.filter(n=>n[0]!=='mais').map(([k,l])=>nav(k,l,atual===k)).join('')}
+    <div class="slabel mono">Gestão</div>
+    ${MAIS.slice(0,4).map(([k,l])=>nav(k,l,false)).join('')}
+    <button class="btn pri" onclick="toast('Lançar nota: formulário fica para a próxima rodada do mockup.')">${ico('cam',20)}Lançar nota</button>
+    <div class="grow"></div>
+    <div class="me"><div class="av">EJ</div><div>Eng. Júnior<small>Engenheiro</small></div></div>`;
+  document.getElementById('bnav').innerHTML=NAV.map(([k,l])=>`<button class="${atual===k?'on':''}" onclick="ir('${k}')">${ico(k)}${l}</button>`).join('');
+}
+
+function header({tabs='',back=null,titulo=null,sub=null}={}){
+  const o=obraAtual();
+  const esquerda = back
+    ? `<button class="back" onclick="${back[1]}">${ico('back',22)}${back[0]}</button><div class="obra" style="padding-top:12px"><div class="sub mono">${o.nome}</div></div>`
+    : `<div class="mark"></div><div class="obra"><h1>${titulo||o.nome}</h1><div class="sub mono">${sub||(o.cliente+' · término '+fmt(o.fim))}</div></div>
+       <button class="trocar" onclick="abrirSheet()">TROCAR <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>`;
+  document.getElementById('top').innerHTML=`<div class="top-in">${esquerda}</div>${tabs?`<div class="tabs">${tabs}</div>`:''}`;
+}
+
+function abrirSheet(){
+  document.getElementById('sheet').innerHTML=`<div class="ch"><span class="mono">Trocar de obra</span><button class="link" onclick="fecharSheet()">FECHAR</button></div>`+
+    obras.map(o=>`<button class="opt ${o.id===S.obra?'on':''}" onclick="S.obra=${o.id};fecharSheet();ir(S.tela==='frente'||S.tela==='dia'?'hoje':S.tela)"><span class="dot"></span><span><b>${o.nome}</b><div class="mono" style="color:var(--muted);margin-top:4px;font-size:11px">${o.cliente} · término ${fmt(o.fim)}</div></span></button>`).join('');
+  document.getElementById('veil').classList.add('on');
+}
+function fecharSheet(){document.getElementById('veil').classList.remove('on')}
+
+/* ---------- blocos ---------- */
+function linhaFrente(f,extra=''){
+  const n=nivel(f);
+  return `<button class="li ${n}" onclick="ir('frente',{frente:${f.id},tabFrente:'avanco'})">
+    <div class="b"><div class="t">${f.serv}</div><div class="m mono">${f.amb} · ${f.resp}</div>${extra}</div>
+    <div class="r">${limChip(f)}<span class="s">${andarTxt(f)}</span></div>
+  </button>`;
+}
+function vazio(icon,titulo,texto,botao){
+  return `<div class="empty"><div class="ic">${ico(icon,34)}</div><h3>${titulo}</h3>${texto?`<p>${texto}</p>`:''}${botao?`<button class="btn pri lg" onclick="toast('Formulário fica para a próxima rodada do mockup.')">${botao}</button>`:''}</div>`;
+}
+function fotos(lista){
+  let i=0;
+  return `<div class="photos">${lista.map(l=>`<div class="ph t${(i++%3)+1}"><span>${l}</span></div>`).join('')}</div>`;
+}
+function fotosDe(entradas){
+  const out=[];
+  entradas.forEach(e=>{const f=e.frente?F(e.frente):null;for(let k=0;k<e.fotos;k++)out.push(f?`${f.amb} · ${f.serv.split(' ')[0]}`:(e.amb||e.tipo))});
+  return out;
+}
+
+/* ---------- telas ---------- */
+function telaHoje(){
+  header({sub:`${WD[HOJE.getDay()]} · ${fmt('2026-11-23')} · ${obraAtual().cliente}`});
+  const o=obraAtual();
+  const fs=frentes.filter(f=>f.obra===S.obra);
+  const ativas=fs.filter(f=>f.sit!=='Concluída'&&f.sit!=='Aguardando aprovação')
+    .sort((a,b)=>(a.lim?D(a.lim):9e15)-(b.lim?D(b.lim):9e15)||(semAndar(b)??-1)-(semAndar(a)??-1));
+  const aprovar=fs.filter(f=>f.sit==='Aguardando aprovação');
+  const red=ativas.filter(f=>nivel(f)==='red'), amb=ativas.filter(f=>nivel(f)==='amb');
+  const mats=materiais.filter(m=>m.obra===S.obra&&m.sit!=='Entregue'&&dif(D(m.ate),HOJE)<=7).sort((a,b)=>D(a.ate)-D(b.ate));
+  const curto=l=>l.length?l.map(f=>f.serv.split(' ')[0].replace(/[–,]/g,'')).join(' · '):'nenhuma';
+  const avanco=fs.length?Math.round(fs.reduce((s,f)=>s+f.pct,0)/fs.length):0;
+  const prazo=Math.max(0,Math.min(100,Math.round(dif(HOJE,D(o.ini))/dif(D(o.fim),D(o.ini))*100)));
+  const dias=[...new Set(diario.filter(d=>d.obra===S.obra).map(d=>d.data))].sort().reverse();
+  const hojeLanc=dias[0]==='2026-11-23';
+  const ultimo=dias.find(d=>d!=='2026-11-23');
+  const fin=financeiro[S.obra];
+
+  const stats=`<div class="stats">
+    <div class="stat red"><div class="mono">Atrasadas</div><div class="num">${red.length}</div><div class="ft">${curto(red)}</div></div>
+    <div class="stat amb"><div class="mono">Atenção</div><div class="num">${amb.length}</div><div class="ft">${curto(amb)}</div></div>
+    <div class="stat teal"><div class="mono">Para aprovar</div><div class="num">${aprovar.length}</div><div class="ft">${curto(aprovar)}</div></div>
+    <div class="stat"><div class="mono">Material 7 dias</div><div class="num">${mats.length}</div><div class="ft">${mats.filter(m=>m.sit==='A comprar').length} a comprar</div></div>
+  </div>`;
+
+  const blocoAprovar = aprovar.length?`<div class="card"><div class="ch"><span class="mono">Para aprovar · ${aprovar.length}</span></div>
+    ${aprovar.map(f=>`<div class="aprovar"><div><div class="li" style="padding:0;min-height:0;border:0"><div class="b"><div class="t">${f.serv}</div><div class="m mono">${f.amb} · marcada por ${f.por} · ${fmtL(f.marcada).toLowerCase()}</div></div><span class="chip teal">100%</span></div></div>
+      <div class="acts"><button class="btn pri" onclick="F(${f.id}).sit='Concluída';toast('Aprovada. Saiu do painel.');render()">Aprovar</button><button class="btn sec" onclick="toast('Devolver pede um comentário — fica para a próxima rodada.')">Devolver</button></div></div>`).join('')}
+  </div>`:'';
+
+  const blocoFrentes = `<div class="card"><div class="ch"><span class="mono">Frentes de serviço · ${ativas.length}</span><button class="link" onclick="ir('frentes')">VER TODAS ›</button></div>
+    ${ativas.length?ativas.map(f=>linhaFrente(f)).join(''):vazio('frentes','Nenhuma frente cadastrada nesta obra.','Comece criando as frentes de serviço.','Nova frente')}</div>`;
+
+  const blocoAvanco = `<div class="card prog"><div class="row"><span class="mono" style="color:var(--slate)">Avanço físico</span><span class="mono" style="color:var(--slate)">prazo corrido ${prazo}%</span></div>
+    <div class="row" style="margin-top:4px"><span class="big">${avanco}%</span><span class="chip ${avanco<prazo-10?'amb':'grn'}">${avanco<prazo-10?`${prazo-avanco} pts atrás do prazo`:'no ritmo'}</span></div>
+    <div class="bar"><i style="width:${avanco}%"></i><b style="left:${prazo}%"></b></div>
+    <div class="legend mono"><span>Início ${fmt(o.ini)}</span><span>▮ hoje</span><span>Término ${fmt(o.fim)}</span></div></div>`;
+
+  const blocoMat = `<div class="card"><div class="ch"><span class="mono">Material para chegar · ${mats.length}</span><button class="link" onclick="ir('materiais')">VER TODOS ›</button></div>
+    ${mats.length?mats.map(m=>linhaMat(m,true)).join(''):`<div class="entry" style="color:var(--muted)">Nada para chegar nos próximos 7 dias.</div>`}</div>`;
+
+  const blocoDiario = `<div class="duo">
+    <button class="card" onclick="${ultimo?`ir('dia',{dia:'${ultimo}'})`:`ir('diario')`}"><div class="mono">Último diário</div><div class="v">${ultimo?fmtL(ultimo):'—'} ›</div></button>
+    <button class="card" onclick="ir('diario')"><div class="mono">Diário de hoje</div><div class="v ${hojeLanc?'grn':'amb'}">${hojeLanc?'Lançado ✓':'Pendente'}</div></button></div>`;
+
+  const blocoFin = `<div class="card"><div class="ch"><span class="mono">Financeiro da obra</span><button class="link" onclick="toast('Financeiro: fora deste mockup.')">ABRIR ›</button></div>
+    ${fin?`<div class="fin">
+      <div><div class="mono">Gasto ontem</div><div class="v">${brl(fin.ontem)}</div></div>
+      <div><div class="mono">Gasto da semana</div><div class="v">${brl(fin.semana)}</div></div>
+      <div><div class="mono">Saldo da obra</div><div class="v">${brl(fin.saldo)}</div></div>
+      <div><div class="mono">A receber</div><div class="v">${brl(fin.receber)}</div>${fin.vencido?`<div class="x">${brl(fin.vencido)} vencido</div>`:''}</div>
+    </div>`:`<div class="entry" style="color:var(--muted)">Nenhum lançamento nesta obra ainda.</div>`}</div>`;
+
+  return stats + `<div class="cols"><div>${blocoAprovar}${blocoFrentes}</div><div>${blocoAvanco}${blocoMat}${blocoDiario}${blocoFin}</div></div>`;
+}
+
+function telaFrentes(){
+  const fs=frentes.filter(f=>f.obra===S.obra);
+  const ambs=['Todos',...new Set(fs.map(f=>f.amb))];
+  if(!ambs.includes(S.amb)) S.amb='Todos';
+  header({tabs:ambs.map(a=>`<button class="tab ${S.amb===a?'on':''}" onclick="S.amb='${a}';render()">${a.toUpperCase()}</button>`).join('')});
+  const lista=fs.filter(f=>S.amb==='Todos'||f.amb===S.amb);
+  const grupos=['Aguardando aprovação','Em andamento','Parada','Não iniciada','Concluída'];
+  const top=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+    <div><div class="mono" style="color:var(--slate)">Frentes de serviço</div><div style="font-size:22px;font-weight:600;margin-top:2px">${plural(lista.length,'frente','frentes')}</div></div>
+    <button class="btn dark" onclick="toast('Nova frente: formulário fica para a próxima rodada.')">+ Nova frente</button></div>`;
+  if(!lista.length) return top+`<div class="card">${vazio('frentes','Nenhuma frente ainda.','Cadastre as frentes de serviço da obra: elétrica, gesso, marcenaria…','Cadastrar a primeira frente')}</div>`;
+  return top+grupos.map(g=>{
+    const it=lista.filter(f=>f.sit===g); if(!it.length) return '';
+    const aberto=g!=='Concluída';
+    return `<details class="card group" ${aberto?'open':''}><summary><div class="ch"><span class="mono">${g} · ${it.length}</span><span class="caret">${ico('chev',18)}</span></div></summary>
+      ${it.map(f=>linhaFrente(f,`<div style="display:flex;align-items:center;gap:8px;margin-top:8px"><div class="mini"><i style="width:${f.pct}%"></i></div><span class="mono" style="color:var(--ink)">${f.pct}%</span></div>`)).join('')}</details>`;
+  }).join('');
+}
+
+function telaFrente(){
+  const f=F(S.frente);
+  header({back:['Frentes',"ir('frentes')"]});
+  const n=nivel(f), s=semAndar(f);
+  const regs=diario.filter(d=>d.frente===f.id).sort((a,b)=>D(b.data)-D(a.data));
+  const mats=materiais.filter(m=>m.frente===f.id);
+  const c=contratos[f.id];
+  const tabs=[['avanco','Avanço'],['fotos','Fotos'],['materiais','Materiais'],['contrato','Contrato']];
+  let corpo='';
+  if(S.tabFrente==='avanco') corpo=regs.length?regs.map(r=>`<div class="entry"><div class="m mono">${fmtL(r.data)} · ${r.por}${r.fotos?` · ${plural(r.fotos,'foto','fotos')}`:''}</div><div class="tx">${r.tx}</div>${r.pct!=null?`<div style="margin-top:6px"><span class="chip teal">→ ${r.pct}%</span></div>`:''}</div>`).join(''):vazio('diario','Nenhum avanço lançado nesta frente ainda.','',null);
+  if(S.tabFrente==='fotos'){const l=fotosDe(regs);corpo=l.length?fotos(l):vazio('cam','Nenhuma foto desta frente ainda.','As fotos entram pelo diário.',null)}
+  if(S.tabFrente==='materiais') corpo=mats.length?mats.map(m=>linhaMat(m,true)).join(''):vazio('materiais','Nenhum material ligado a esta frente.','',null);
+  if(S.tabFrente==='contrato') corpo=c?`<div class="fin">
+      <div><div class="mono">Empreiteiro</div><div class="v" style="font-size:17px">${c.emp}</div></div>
+      <div><div class="mono">Contratado</div><div class="v">${brl(c.val)}</div></div>
+      <div><div class="mono">Já pago</div><div class="v">${brl(c.pago)}</div></div>
+      <div><div class="mono">Falta pagar</div><div class="v">${brl(c.val-c.pago)}</div></div></div>
+      <div class="actions" style="grid-template-columns:1fr"><button class="btn pri" onclick="toast('Abre Lançar nota já preenchido — próxima rodada.')">Registrar pagamento</button></div>`
+    :vazio('fin','Nenhum contrato cadastrado para esta frente.','',`Cadastrar contrato`);
+
+  return `<div class="card">
+    <div class="dhead"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><h2>${f.serv}</h2>${limChip(f)}</div>
+      <div class="m mono">${f.amb} · ${f.resp}</div></div>
+    <div class="stats" style="padding:0 14px 14px;grid-template-columns:repeat(3,1fr)">
+      <div class="stat teal"><div class="mono">Avanço</div><div class="num">${f.pct}%</div></div>
+      <div class="stat ${s!==null&&s>=3?'amb':'grn'}"><div class="mono">Sem andar</div><div class="num">${s===null?'—':s}</div><div class="ft">${s===null?'começa '+fmt(f.ini):s===1?'dia':'dias'}</div></div>
+      <div class="stat ${n}"><div class="mono">Situação</div><div style="font-size:16px;font-weight:600;margin-top:10px">${f.sit}</div></div>
+    </div>
+    <div class="kv">
+      <div><div class="mono">Início previsto</div><div class="v">${fmt(f.ini)}</div></div>
+      <div><div class="mono">Término previsto</div><div class="v">${fmt(f.fim)}</div></div>
+      <div><div class="mono">Data limite de decisão</div><div class="v" style="color:${n==='red'?'var(--red-ink)':n==='amb'?'var(--amb-ink)':'inherit'}">${limTxt(f)}</div>${f.limMot?`<div style="font-size:13px;color:var(--muted);margin-top:2px">${f.limMot}</div>`:''}</div>
+      <div><div class="mono">Último avanço</div><div class="v">${f.ult?fmtL(f.ult):'—'}</div></div>
+    </div>
+    <div class="actions">
+      ${f.sit==='Aguardando aprovação'
+        ?`<button class="btn pri" onclick="F(${f.id}).sit='Concluída';toast('Aprovada.');render()">Aprovar</button><button class="btn sec" onclick="toast('Devolver pede comentário.')">Devolver</button>`
+        :f.sit==='Concluída'?`<button class="btn sec" style="grid-column:1/-1" onclick="toast('Editar: próxima rodada.')">Editar</button>`
+        :`<button class="btn pri" onclick="F(${f.id}).sit='Aguardando aprovação';F(${f.id}).marcada='2026-11-23';F(${f.id}).por='Eng. Júnior';toast('Marcada como pronta. Foi para aprovação.');render()">Marcar como pronta</button><button class="btn sec" onclick="toast('Editar: próxima rodada.')">Editar</button>`}
+    </div>
+  </div>
+  <div class="card"><div class="seg">${tabs.map(([k,l])=>`<button class="${S.tabFrente===k?'on':''}" onclick="S.tabFrente='${k}';render()">${l.toUpperCase()}</button>`).join('')}</div>${corpo}</div>`;
+}
+
+function telaDiario(){
+  const ds=diario.filter(d=>d.obra===S.obra);
+  const dias=[...new Set(ds.map(d=>d.data))].sort().reverse();
+  const nf=ds.reduce((s,d)=>s+d.fotos,0);
+  header({tabs:[['dias','Dias',dias.length],['fotos','Fotos',nf]].map(([k,l,c])=>`<button class="tab ${S.tabDiario===k?'on':''}" onclick="S.tabDiario='${k}';render()">${l.toUpperCase()}<span class="n">${c}</span></button>`).join('')});
+  const hojeRegs=ds.filter(d=>d.data==='2026-11-23');
+  const cartaoHoje=`<div class="hoje"><div class="mono">Diário de hoje · ${WD[HOJE.getDay()]}, 23/11</div>
+    <h2>${hojeRegs.length?plural(hojeRegs.length,'registro lançado','registros lançados'):'Nada lançado ainda'}</h2>
+    <p>${hojeRegs.length?hojeRegs.map(r=>r.tipo+(r.frente?': '+F(r.frente).serv:'')).join(' · '):'Registre o que cada frente fez, quem veio e o que deu errado. Foto ajuda a provar depois.'}</p>
+    <button class="btn pri lg full" onclick="toast('Lançar no diário: formulário fica para a próxima rodada.')">${ico('cam',22)}Lançar no diário</button></div>`;
+  if(!dias.length) return cartaoHoje+`<div class="card">${vazio('diario','Nenhum diário lançado nesta obra ainda.','Toque em Lançar no diário para registrar o dia de hoje.',null)}</div>`;
+  if(S.tabDiario==='fotos'){
+    return cartaoHoje+dias.filter(d=>ds.some(x=>x.data===d&&x.fotos)).map(d=>`<div class="card"><div class="ch"><span class="mono">${fmtL(d)}${dif(HOJE,D(d))>1?'/2026':''}</span><span class="mono" style="color:var(--muted)">${plural(ds.filter(x=>x.data===d).reduce((s,x)=>s+x.fotos,0),'foto','fotos')}</span></div>${fotos(fotosDe(ds.filter(x=>x.data===d)))}</div>`).join('');
+  }
+  return cartaoHoje+`<div class="card"><div class="ch"><span class="mono">Dias com registro · ${dias.length}</span></div>`+dias.map(d=>{
+    const r=ds.filter(x=>x.data===d), av=r.filter(x=>x.tipo==='Avanço').length, oc=r.filter(x=>x.tipo==='Ocorrência').length, ft=r.reduce((s,x)=>s+x.fotos,0);
+    return `<button class="li" onclick="ir('dia',{dia:'${d}'})"><div class="b"><div class="t">${fmtL(d)}</div><div class="m mono">${r[0].por} · ${plural(av,'frente andou','frentes andaram')} · ${plural(ft,'foto','fotos')}</div></div>
+      <div class="r">${oc?`<span class="chip amb">${plural(oc,'ocorrência','ocorrências')}</span>`:''}${ico('chev',20)}</div></button>`;
+  }).join('')+`</div>`;
+}
+
+function telaDia(){
+  const ds=diario.filter(d=>d.obra===S.obra);
+  const dias=[...new Set(ds.map(d=>d.data))].sort();
+  const i=dias.indexOf(S.dia);
+  const r=ds.filter(d=>d.data===S.dia);
+  header({back:['Diário',"ir('diario')"]});
+  const nav=`<div class="card" style="display:flex;align-items:center;justify-content:space-between">
+    <button class="btn" ${i>0?`onclick="ir('dia',{dia:'${dias[i-1]}'})"`:'disabled style="opacity:.35"'}>${ico('back',22)}</button>
+    <div style="text-align:center"><div style="font-size:19px;font-weight:600">${fmtL(S.dia)}</div><div class="mono" style="color:var(--muted)">${fmt(S.dia)}/2026</div></div>
+    <button class="btn" ${i<dias.length-1?`onclick="ir('dia',{dia:'${dias[i+1]}'})"`:'disabled style="opacity:.35"'}>${ico('chev',22)}</button></div>`;
+  const bloco=(t,l,fn)=>l.length?`<div class="card"><div class="ch"><span class="mono">${t}</span></div>${l.map(fn).join('')}</div>`:'';
+  const eq=r.filter(x=>x.tipo==='Equipe'), av=r.filter(x=>x.tipo==='Avanço'), oc=r.filter(x=>x.tipo==='Ocorrência');
+  const ft=fotosDe(r);
+  return nav
+    +bloco('Equipe presente',eq,x=>`<div class="entry"><div class="tx">${x.tx}</div><div class="m mono">${x.por}</div></div>`)
+    +bloco('Avanço por frente',av,x=>`<div class="entry"><div style="display:flex;justify-content:space-between;gap:8px"><b>${F(x.frente).serv}</b><span class="chip teal">→ ${x.pct}%</span></div><div class="tx">${x.tx}</div><div class="m mono">${x.por}</div></div>`)
+    +bloco('Ocorrências',oc,x=>`<div class="entry" style="border-left:4px solid var(--amb)"><div class="tx">${x.tx}</div><div class="m mono">${x.por}</div></div>`)
+    +(ft.length?`<div class="card"><div class="ch"><span class="mono">Fotos do dia · ${ft.length}</span></div>${fotos(ft)}</div>`:'');
+}
+
+function linhaMat(m,resumo){
+  const x=dif(D(m.ate),HOJE), f=m.frente?F(m.frente):null;
+  const venc=x<0&&m.sit!=='Entregue';
+  const quando= m.sit==='Entregue'?'entregue':x<0?`atrasado ${-x}d`:x===0?'hoje':x===1?'amanhã':'até '+fmt(m.ate);
+  const cor = m.sit==='Entregue'?'grn': venc?'red': x<=2?'amb':'gray';
+  const sitChip = m.sit==='A comprar'?'amb':m.sit==='Comprado'?'teal':'grn';
+  return `<div class="li ${venc?'red':''}">
+    <div class="b"><div class="t">${m.item} <span style="font-weight:500;color:var(--muted)">· ${m.qtd}</span></div>
+      <div class="m mono">${f?f.serv:'sem frente'} · ${m.forn||'sem fornecedor'}</div>
+      ${!resumo&&m.sit!=='Entregue'?`<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        ${m.sit==='A comprar'?`<button class="btn sec" onclick="mat(${m.id},'Comprado')">Marcar comprado</button>`:''}
+        <button class="btn pri" onclick="mat(${m.id},'Entregue')">Marcar entregue</button></div>`:''}
+    </div>
+    <div class="r"><span class="chip ${cor}">${quando}</span><span class="chip ${sitChip}">${m.sit}</span></div></div>`;
+}
+function mat(id,sit){materiais.find(m=>m.id===id).sit=sit;toast(`Movido para ${sit}.`);render()}
+
+function telaMateriais(){
+  const ms=materiais.filter(m=>m.obra===S.obra);
+  const abas=['A comprar','Comprado','Entregue'];
+  header({tabs:abas.map(a=>`<button class="tab ${S.tabMat===a?'on':''}" onclick="S.tabMat='${a}';render()">${a.toUpperCase()}<span class="n">${ms.filter(m=>m.sit===a).length}</span></button>`).join('')});
+  const top=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+    <div><div class="mono" style="color:var(--slate)">Materiais · ${S.tabMat}</div><div style="font-size:22px;font-weight:600;margin-top:2px">${plural(ms.filter(m=>m.sit===S.tabMat).length,'item','itens')}</div></div>
+    ${ms.length?`<button class="btn dark" onclick="toast('Novo material: próxima rodada.')">+ Novo material</button>`:''}</div>`;
+  if(!ms.length) return `<div class="card">${vazio('materiais','Nenhum material programado nesta obra.','Cadastre o que precisa chegar — piso, tinta, argamassa — e o sistema avisa no painel antes de travar o serviço.','+ Cadastrar o primeiro material')}</div>`;
+  const l=ms.filter(m=>m.sit===S.tabMat).sort((a,b)=>D(a.ate)-D(b.ate));
+  return top+`<div class="card">${l.length?l.map(m=>linhaMat(m,false)).join(''):`<div class="entry" style="color:var(--muted)">Nenhum item em “${S.tabMat}”.</div>`}</div>`;
+}
+
+function telaMais(){
+  header({titulo:'Mais',sub:'Eng. Júnior · Engenheiro'});
+  return `<div class="card mais">${MAIS.map(([k,l])=>`<button class="li" onclick="toast('${l}: fora deste mockup.')"><span style="color:var(--slate)">${ico(k)}</span><div class="b"><div class="t">${l}</div></div>${ico('chev',20)}</button>`).join('')}</div>`;
+}
+
+function render(){
+  renderSide();
+  const T={hoje:telaHoje,frentes:telaFrentes,frente:telaFrente,diario:telaDiario,dia:telaDia,materiais:telaMateriais,mais:telaMais};
+  document.getElementById('view').innerHTML=T[S.tela]();
+}
+render();
+</script>
+</body>
+</html>
