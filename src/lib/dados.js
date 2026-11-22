@@ -10,16 +10,18 @@
 // Hoje lê do mock (USAR_MOCK = true). Na etapa do banco, só o miolo daqui muda.
 // ============================================================
 import { USAR_MOCK, hoje } from './config.js'
-import { daObra, obrasVisiveis } from './escopo.js'
+import { daObra, obrasDoSeletor, obrasVisiveis } from './escopo.js'
+import { emailEmUso, normalizarEmail, obrasDoAcesso, papelDaNovaConta, podeGerenciar } from './pessoas.js'
+import { CAMPOS_CRIAR_CONTA, validar } from './formularios.js'
 import {
-  mockProfiles, mockObras, mockMembros, mockFrentes, mockContratos,
+  mockProfiles, mockSenhas, SENHA_DE_TESTE, mockObras, mockMembros, mockFrentes, mockContratos,
   mockRegistros, mockFotos, mockMateriais, mockLancamentos,
 } from './mockData.js'
 
 // Cópia de trabalho: as ações (aprovar, marcar entregue…) mexem nela, e a
 // tela vê o efeito enquanto o app estiver aberto. Recarregar a página zera.
 const db = structuredClone({
-  profiles: mockProfiles, obras: mockObras, membros: mockMembros, frentes: mockFrentes,
+  profiles: mockProfiles, senhas: mockSenhas, obras: mockObras, membros: mockMembros, frentes: mockFrentes,
   contratos: mockContratos, registros: mockRegistros, fotos: mockFotos,
   materiais: mockMateriais, lancamentos: mockLancamentos,
 })
@@ -50,9 +52,35 @@ async function responder(fn) {
 const nomeDe = (profileId) => db.profiles.find((p) => p.id === profileId)?.nome ?? '—'
 const comAutor = (lista) => lista.map((x) => ({ ...x, autor_nome: nomeDe(x.autor_id) }))
 
-// ---------- sessão (no mock, o "login" é escolher uma pessoa de teste) ----------
-export const listarPessoasDeTeste = () => structuredClone(db.profiles)
-export const obterPerfil = (id) => structuredClone(db.profiles.find((p) => p.id === id) ?? null)
+// ---------- sessão (no mock, email e senha conferidos aqui; no banco, supabase.auth) ----------
+// Só no mock: as contas de exemplo e a senha de teste, para o rodapé do login.
+export const contasDeExemplo = () =>
+  USAR_MOCK ? { contas: db.profiles.map(({ nome, email, role }) => ({ nome, email, role })), senha: SENHA_DE_TESTE } : null
+
+// Sessão lembrada no navegador: conta desativada (ou que sumiu no F5 do mock) volta ao login.
+export const obterPerfil = (id) => {
+  const p = db.profiles.find((x) => x.id === id)
+  return p?.ativo ? structuredClone(p) : null
+}
+
+export const entrar = ({ email, senha }) => responder(() => {
+  const p = db.profiles.find((x) => normalizarEmail(x.email) === normalizarEmail(email))
+  if (!p || db.senhas[p.id] !== senha) throw new Error('Email ou senha errados.')
+  if (!p.ativo) throw new Error('Esta conta foi desativada. Fale com o engenheiro.')
+  return p
+})
+
+export const criarConta = (valores) => responder(() => {
+  if (Object.keys(validar(CAMPOS_CRIAR_CONTA, valores)).length) throw new Error('Confira os campos marcados.')
+  if (emailEmUso(db.profiles, valores.email)) throw new Error('Já existe uma conta com este email. Use Entrar.')
+  const p = {
+    id: crypto.randomUUID(), nome: valores.nome.trim(), email: normalizarEmail(valores.email),
+    role: papelDaNovaConta(db.profiles), ativo: true,
+  }
+  db.profiles.push(p)
+  db.senhas[p.id] = valores.senha
+  return p
+})
 
 // ---------- obras ----------
 // Todas as obras que a pessoa enxerga (o Engenheiro vê também a interna "Empresa").
@@ -125,7 +153,40 @@ export const marcarParcelaRecebida = (id, { data, forma_pagamento }) => responde
 export const listarCaixaGeral = () => responder(() => ({ obras: db.obras, lancamentos: db.lancamentos }))
 
 // ---------- pessoas ----------
-export const listarPessoas = () => responder(() => db.profiles.map((p) => ({
-  ...p,
-  obras: db.membros.filter((m) => m.profile_id === p.id).map((m) => db.obras.find((o) => o.id === m.obra_id)?.nome).filter(Boolean),
-})))
+export const listarPessoas = () => responder(() => db.profiles.map((p) => {
+  const obraIds = db.membros.filter((m) => m.profile_id === p.id).map((m) => m.obra_id)
+  return { ...p, obra_ids: obraIds, obras: obraIds.map((id) => db.obras.find((o) => o.id === id)?.nome).filter(Boolean) }
+}))
+
+function pessoaGerenciavel(quem, id) {
+  const p = db.profiles.find((x) => x.id === id)
+  if (!podeGerenciar(quem, p)) throw new Error('Você não pode mudar o acesso desta pessoa.')
+  return p
+}
+
+// Liberar e Editar são a mesma coisa: perfil + obras (o Mestre só vê as obras marcadas).
+export const salvarAcesso = (quem, id, { role, obraIds }) => responder(() => {
+  const p = pessoaGerenciavel(quem, id)
+  const atuais = db.membros.filter((m) => m.profile_id === id).map((m) => m.obra_id)
+  const abertas = obrasDoSeletor(db.obras).map((o) => o.id)
+  const novo = obrasDoAcesso(atuais, role, obraIds, abertas)
+  if (novo.erro) throw new Error(novo.erro)
+  p.role = role
+  db.membros = db.membros.filter((m) => m.profile_id !== id || novo.obraIds.includes(m.obra_id))
+  novo.obraIds.filter((oid) => !atuais.includes(oid)).forEach((obra_id) => db.membros.push({ id: crypto.randomUUID(), obra_id, profile_id: id }))
+  return p
+})
+
+// Desativar não apaga: o que a pessoa lançou continua com o nome dela.
+export const definirAtivo = (quem, id, ativo) => responder(() => {
+  const p = pessoaGerenciavel(quem, id)
+  p.ativo = !!ativo
+  return p
+})
+
+export const salvarMeuNome = (quem, nome) => responder(() => {
+  if (!nome?.trim()) throw new Error('Preencha o nome.')
+  const p = db.profiles.find((x) => x.id === quem.id)
+  p.nome = nome.trim()
+  return p
+})

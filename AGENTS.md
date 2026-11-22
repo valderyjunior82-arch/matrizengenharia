@@ -84,6 +84,89 @@ Cada função morta é uma mentira que o próximo leitor precisa desmascarar.
 - **Estado que nunca muda ou nunca é lido é lixo** — `useState` sem setter, prop que ninguém consome, flag que ninguém liga.
 - **Limpeza NUNCA toca no banco nem em arquivo de dado.** Tabela ou coluna órfã continua existindo até decisão de quem é dono. Na dúvida, pergunte.
 
+## Checklist de testes vivo
+
+Combinado com o engenheiro em 21/11/2026; vale em toda conversa.
+
+O engenheiro (dono da Matriz Engenharia) não programa: decide o produto e testa na tela. O agente constrói. Para ele saber **o que testar** e o agente saber **o que deu errado**, existe uma página de testes viva, que o agente mantém e ele marca.
+
+### 1. A página
+
+Na primeira melhoria que precisar de teste, crie uma página publicada chamada **"Testes do Matriz Engenharia"**, com um banco de dados próprio (as marcas ficam guardadas no servidor, não no navegador). Se não existir ferramenta de página publicada na conversa, crie `testes.html` na pasta do projeto, guardando as marcas no próprio navegador, e diga que nesse caso ele precisa colar o resultado de volta.
+
+A página tem:
+
+- **No topo, a rodada:** nome ("Rodada 2 · Cadastros no banco · 21/10"), uma nota curta do que mudou e o que fazer antes de começar (ex.: "aperte Ctrl+F5").
+- **Um cartão por item a testar**, agrupado por módulo, com:
+  - **título**: o que se testa, em uma linha;
+  - **passos**: numerados, uma ação por passo, com os nomes exatos da tela ("Clique em **Lançar nota**", e não "lance uma nota");
+  - **esperado**: o que ele deve ver se deu certo, para dizer sim ou não sem interpretar;
+  - **três botões**: `A testar` · `Funcionou` · `Problema`;
+  - **um campo de observação**.
+- Sem enfeite: a página é ferramenta. Funciona no celular.
+
+### 2. O ciclo
+
+1. O agente **constrói** a melhoria.
+2. **Antes de passar**, confere o que dá sozinho: `npm run check`, a tela no navegador (nas duas obras), e, quando mexer no banco, o teste de permissões. **Só passa o que passou.** O que não conseguiu conferir (ex.: exige a senha dele), diz qual.
+3. **Escreve os itens** na página e manda o link com um resumo de uma linha por item.
+4. Ele **testa** e marca cada item, escrevendo o que viu nos que deram problema.
+5. Ele **avisa** ("atualizei os testes"). O agente lê as marcas direto da página; ele não copia nada para o chat.
+6. **Para cada problema**, o agente descobre a causa antes de mexer (código, registros do servidor, banco) e explica em uma linha o que estava acontecendo e o que mudou.
+7. O agente **limpa a página**: o que passou **sai**; o que deu problema volta como `A testar`, com passos ajustados; o que é novo entra. Atualiza a nota da rodada.
+8. Repete até não sobrar nada. A rodada fecha e a página diz "nada a testar agora".
+
+**Nada morto fica guardado.** A página mostra só o que falta testar. Histórico, se houver, é uma linha por item aprovado em `docs/DIARIO.md` (data, o que mudou, o que passou), nunca na página.
+
+### 3. Como escrever um bom item
+
+- **Um comportamento por item.** "Cadastrar e editar obra" são dois, se puderem falhar separados.
+- **Passos que qualquer pessoa repete** sem saber programar, na ordem da tela.
+- **Esperado observável:** "a nota aparece em Lançamentos com o valor novo", e não "salva corretamente".
+- **Teste o caminho errado também:** campo vazio, valor inválido, botão clicado duas vezes, o que não deveria ser permitido.
+- **Diga qual conta usar** quando importar (Engenheiro, Mestre, Aguardando) e **qual obra** (Apto 1802, Apto 501).
+- **Diga se o teste grava dado de verdade**, e como desfazer depois.
+
+### 4. Quando o banco entra: os itens que nunca faltam
+
+Para cada tela que passa a gravar, inclua itens que provem:
+
+| Prova | O item pergunta | Por que |
+|---|---|---|
+| **Ficou gravado** | Depois de salvar, **aperte F5**: continua lá? | O mock guardava na memória; o banco pode não ter gravado e a tela fingir que sim |
+| **Gravou certo** | O que voltou do F5 é exatamente o que foi digitado (acento, data, número, ordem)? | Tradução entre tela e banco perde campo sem avisar |
+| **Cada um vê o seu** | Com a conta de outro perfil, e em outra obra, vê só o que deve? | A RLS é a única tranca de verdade; esconder botão não protege nada |
+| **Quem não pode, não consegue, e é avisado** | O perfil sem permissão tenta gravar: o banco recusa **e a tela diz por quê**? | Recusa calada parece bug; aviso claro é produto |
+| **Nada duplica** | Salvar duas vezes, importar de novo, tirar e pôr de volta: aparece repetido? | Clique duplo e reimportação são as duplicatas mais comuns |
+| **Apagar não some com histórico** | Desativar algo que outra tela usa: a outra tela continua funcionando? | Registro que outro lugar lê se desativa, não se apaga |
+| **Lista vazia e lista grande** | Sem dado, a tela diz o que fazer? Com muitos, aparece tudo? | O Supabase corta listas em 1.000 linhas sem avisar |
+| **Erro de rede** | Se a internet cair no meio, a tela diz que não salvou? | Gravação perdida sem aviso é o pior defeito possível |
+
+E do lado do agente, antes de passar qualquer item de banco:
+
+- **Toda mudança no banco é arquivo versionado** em `supabase/migrations/`, nunca clique no painel.
+- **Teste de permissões automático**: cada perfil tenta ler e gravar no que é seu e no do vizinho (outra obra), dentro de uma transação desfeita no fim. Roda depois de qualquer mudança de permissão.
+- **Revisão de código** em toda mudança na camada de dados, nas permissões ou no login, antes de subir.
+- **Avisos de segurança do painel do Supabase** conferidos depois de cada mudança, cada um explicado (intencional ou a corrigir).
+
+### 5. O que o agente nunca faz
+
+- Digitar senha, chave ou token, nem criar conta em nome dele. Se o teste precisa, o passo diz "entre com a sua conta".
+- Colocar segredo (chave, senha, `.env`) no código, no Git ou na página de testes.
+- Usar dado real de cliente como exemplo. Exemplo é sempre fictício.
+- Dizer que algo está pronto sem ter rodado `npm run check` e olhado a tela; se não conseguiu olhar, dizer isso.
+- Apagar dado de verdade para "limpar o teste". Desativar, sim; apagar, só com o ok dele.
+
+### 6. Como responder depois de cada rodada
+
+Resposta curta, em português simples, sem jargão:
+
+- o que passou e saiu da página;
+- uma tabela com cada problema: **o que estava acontecendo** · **o que mudou**;
+- o que voltou para teste e o que é novo;
+- o que não deu para conferir e por quê;
+- o que espera uma decisão dele: uma pergunta por vez, com a recomendação do agente.
+
 ## O que entra neste arquivo
 
 Ele é lido inteiro em toda sessão — cada linha custa em todas elas. Só entra o que o código não conta sozinho:

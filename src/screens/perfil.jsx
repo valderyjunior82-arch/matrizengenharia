@@ -1,11 +1,23 @@
-// Meu perfil — nome, email, perfil e Sair.
+// Meu perfil — nome (editável), email, perfil e Sair.
+import { useState } from 'react'
 import { useSessao } from '../lib/SessaoContext.jsx'
-import { USAR_MOCK } from '../lib/config.js'
+import { salvarMeuNome } from '../lib/dados.js'
+import { CAMPOS_MEU_NOME } from '../lib/formularios.js'
 import { iniciais } from '../lib/formato.js'
-import { avisar, Cartao, Icon } from '../components/index.jsx'
+import { avisar, Cartao, Folha, Formulario, Icon } from '../components/index.jsx'
 
 export default function Perfil({ profile }) {
-  const { sair } = useSessao()
+  const { sair, atualizarPerfil } = useSessao()
+  const [editando, setEditando] = useState(false)
+
+  const salvar = async ({ nome }) => {
+    const r = await salvarMeuNome(profile, nome)
+    if (r.erro) { avisar(r.erro); return }
+    atualizarPerfil(r.data)
+    setEditando(false)
+    avisar('Salvo.')
+  }
+
   return (
     <>
       <div className="titulo-tela"><div><div className="mono">Conta</div><h2>Meu perfil</h2></div></div>
@@ -19,10 +31,15 @@ export default function Perfil({ profile }) {
           <div><div className="rotulo">Situação</div><div className="v">{profile.ativo ? 'Ativo' : 'Desativado'}</div></div>
         </div>
         <div className="acoes">
-          <button className="btn sec" onClick={() => avisar('Editar o nome entra na etapa do banco.')}>Editar nome</button>
-          <button className="btn perigo" onClick={sair}><Icon nome="sair" tamanho={20} />{USAR_MOCK ? 'Trocar pessoa' : 'Sair'}</button>
+          <button className="btn sec" onClick={() => setEditando(true)}>Editar nome</button>
+          <button className="btn perigo" onClick={sair}><Icon nome="sair" tamanho={20} />Sair</button>
         </div>
       </Cartao>
+      {editando && (
+        <Folha titulo="Editar nome" onFechar={() => setEditando(false)}>
+          <Formulario campos={CAMPOS_MEU_NOME} inicial={{ nome: profile.nome }} onSalvar={salvar} onCancelar={() => setEditando(false)} />
+        </Folha>
+      )}
     </>
   )
 }

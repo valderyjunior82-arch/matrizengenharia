@@ -3,6 +3,8 @@
 // Dono único: nenhuma tela escreve estes textos à mão.
 
 export const PAPEIS = ['Aguardando', 'Engenheiro', 'Mestre', 'Cliente']
+// O que o Engenheiro pode escolher ao liberar alguém (Cliente entra na semana 2).
+export const PAPEIS_DE_ACESSO = ['Engenheiro', 'Mestre']
 export const SITUACOES_OBRA = ['Em andamento', 'Parada', 'Concluída']
 export const SITUACOES_FRENTE = ['Não iniciada', 'Em andamento', 'Parada', 'Aguardando aprovação', 'Concluída']
 export const TIPOS_REGISTRO = ['Avanço', 'Equipe', 'Ocorrência']

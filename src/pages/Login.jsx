@@ -1,36 +1,43 @@
-// Login. Enquanto o banco não existe, entrar é escolher uma pessoa de teste:
-// assim dá para ver o app como Engenheiro, como Mestre e como conta pendente.
+// Login e Criar conta. A primeira conta do sistema já entra como Engenheiro;
+// as seguintes entram como Aguardando (regra em lib/pessoas.js).
+import { useState } from 'react'
 import { useSessao } from '../lib/SessaoContext.jsx'
-import { listarPessoasDeTeste } from '../lib/dados.js'
-import { Icon, MarcaM } from '../components/index.jsx'
-
-const DESCRICAO = {
-  Engenheiro: 'Vê todas as obras e o dinheiro. Abre em Hoje.',
-  Mestre: 'Só as obras dele, sem nenhum valor. Abre no Diário.',
-  Aguardando: 'Conta nova, ainda não liberada.',
-}
+import { contasDeExemplo } from '../lib/dados.js'
+import { CAMPOS_CRIAR_CONTA, CAMPOS_ENTRAR } from '../lib/formularios.js'
+import { Formulario, MarcaM } from '../components/index.jsx'
 
 export default function Login() {
-  const { entrar } = useSessao()
-  const pessoas = listarPessoasDeTeste()
+  const { entrar, criarConta } = useSessao()
+  const [criando, setCriando] = useState(false)
+  const [erro, setErro] = useState(null)
+  const exemplo = contasDeExemplo()
+
+  const enviar = async (valores) => {
+    setErro(null)
+    const r = await (criando ? criarConta : entrar)(valores)
+    if (r.erro) setErro(r.erro)
+  }
+  const trocar = () => { setCriando(!criando); setErro(null) }
+
   return (
     <div className="entrada">
       <div style={{ width: '100%', maxWidth: 420 }}>
         <div className="marca"><MarcaM tamanho={64} rotulo="Matriz Engenharia" /><span>MATRIZ<br />ENGENHARIA</span></div>
         <div className="card">
-          <div className="ch"><span className="mono">Entrar como (teste)</span></div>
-          {pessoas.map((p) => (
-            <button key={p.id} className="li" onClick={() => entrar(p.id)}>
-              <div className="b">
-                <div className="t">{p.nome}</div>
-                <div className="m">{p.role} · {DESCRICAO[p.role]}</div>
-              </div>
-              <Icon nome="chev" tamanho={20} />
-            </button>
-          ))}
-          <div className="aviso" style={{ borderTop: '1px solid var(--line2)', fontSize: 14 }}>
-            Login com email e senha entra junto com o banco. Por enquanto, os dados são de exemplo e nada sai deste computador.
+          <div className="ch"><span className="mono">{criando ? 'Criar conta' : 'Entrar'}</span></div>
+          {erro && <div className="aviso erro" role="alert" style={{ color: 'var(--red-ink)', fontWeight: 600 }}>{erro}</div>}
+          <Formulario key={criando ? 'criar' : 'entrar'} campos={criando ? CAMPOS_CRIAR_CONTA : CAMPOS_ENTRAR}
+            rotuloSalvar={criando ? 'Criar conta' : 'Entrar'} onSalvar={enviar} />
+          <div className="aviso" style={{ borderTop: '1px solid var(--line2)' }}>
+            {criando ? 'Já tem conta? ' : 'Ainda não tem conta? '}
+            <button className="link" onClick={trocar}>{criando ? 'Entrar' : 'Criar conta'}</button>
           </div>
+          {exemplo && !criando && (
+            <div className="aviso" style={{ borderTop: '1px solid var(--line2)', fontSize: 14 }}>
+              Dados de exemplo (nada sai deste computador). Senha de teste de todas: <b>{exemplo.senha}</b>
+              {exemplo.contas.map((c) => <div key={c.email}>{c.email} · {c.role}</div>)}
+            </div>
+          )}
         </div>
       </div>
     </div>

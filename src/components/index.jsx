@@ -228,9 +228,9 @@ export function Formulario({ campos, inicial, listas = {}, rotuloSalvar = 'Salva
         } else if (c.tipo === 'textoLongo') {
           entrada = <textarea {...comum} />
         } else {
-          const tipoHtml = { data: 'date', email: 'email', numero: 'text', dinheiro: 'text' }[c.tipo] || 'text'
+          const tipoHtml = { data: 'date', email: 'email', senha: 'password', numero: 'text', dinheiro: 'text' }[c.tipo] || 'text'
           const teclado = c.tipo === 'numero' || c.tipo === 'dinheiro' ? 'decimal' : undefined
-          entrada = <input {...comum} type={tipoHtml} inputMode={teclado} list={c.sugestoesDe ? `${id}-sug` : undefined}
+          entrada = <input {...comum} type={tipoHtml} inputMode={teclado} autoComplete={c.auto} list={c.sugestoesDe ? `${id}-sug` : undefined}
             placeholder={c.tipo === 'dinheiro' ? 'R$ 0,00' : undefined} />
         }
         return (
@@ -245,8 +245,8 @@ export function Formulario({ campos, inicial, listas = {}, rotuloSalvar = 'Salva
         )
       })}
       {/* Fica grudado no rodapé no celular: Salvar sempre à mão, mesmo em formulário longo. */}
-      <div className="acoes-form inteiro">
-        <button type="button" className="btn sec" onClick={onCancelar}>Cancelar</button>
+      <div className="acoes-form inteiro" style={onCancelar ? undefined : { gridTemplateColumns: '1fr' }}>
+        {onCancelar && <button type="button" className="btn sec" onClick={onCancelar}>Cancelar</button>}
         <button type="submit" className="btn pri" disabled={salvando}>{salvando ? 'Salvando…' : rotuloSalvar}</button>
       </div>
     </form>

@@ -1,9 +1,20 @@
 // Conta criada e ainda não liberada: não vê dado nenhum.
+import { useEffect } from 'react'
 import { useSessao } from '../lib/SessaoContext.jsx'
 import { Icon, MarcaM } from '../components/index.jsx'
 
+// De quanto em quanto tempo a tela pergunta se a conta já foi liberada.
+const INTERVALO_MS = 15000
+
 export default function Aguardando() {
-  const { profile, sair } = useSessao()
+  const { profile, sair, conferirConta } = useSessao()
+
+  // "Assim que ele liberar, você entra direto": confere a cada 15 s e ao voltar para o app.
+  useEffect(() => {
+    const t = setInterval(conferirConta, INTERVALO_MS)
+    window.addEventListener('focus', conferirConta)
+    return () => { clearInterval(t); window.removeEventListener('focus', conferirConta) }
+  }, [conferirConta])
   return (
     <div className="entrada">
       <div style={{ width: '100%', maxWidth: 420 }}>

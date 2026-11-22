@@ -21,6 +21,11 @@ export const mockProfiles = [
   { id: 'p3', nome: 'Lucas Ferreira (estagiário)', email: 'lucas@exemplo.com', role: 'Aguardando', ativo: true },
 ]
 
+// Senha de mentira, só do mock: fica numa tabela à parte, como o login do
+// Supabase guarda a senha fora de profiles. Some na etapa do banco.
+export const SENHA_DE_TESTE = 'obra1234'
+export const mockSenhas = { p1: SENHA_DE_TESTE, p2: SENHA_DE_TESTE, p3: SENHA_DE_TESTE }
+
 export const mockObras = [
   {
     id: 'o1', nome: 'Apto 1802 – Ed. Jardins', codigo: 'JARDINS-1802',

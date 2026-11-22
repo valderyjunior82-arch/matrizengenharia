@@ -1,10 +1,10 @@
 import { createContext, useContext, useState } from 'react'
-import { obterPerfil } from './dados.js'
+import { criarConta as criarContaDados, entrar as entrarDados, obterPerfil } from './dados.js'
 
-// Quem está usando o app. No mock, o "login" é escolher uma pessoa de teste;
+// Quem está usando o app. No mock, email e senha são conferidos em dados.js;
 // na etapa do banco, isto passa a ouvir o login do Supabase.
 const SessaoCtx = createContext(null)
-const CHAVE = 'matriz:pessoa-teste'
+const CHAVE = 'matriz:sessao'
 
 function lerGuardado() {
   try { return localStorage.getItem(CHAVE) } catch (_e) { return null }
@@ -22,10 +22,28 @@ export function SessaoProvider({ children }) {
     return id ? obterPerfil(id) : null
   })
 
-  const entrar = (id) => { guardar(id); setProfile(obterPerfil(id)) }
-  const sair = () => { guardar(null); setProfile(null) }
+  // Entrar e Criar conta devolvem { data, erro }: a tela mostra o erro.
+  const comecar = async (pedido) => {
+    const r = await pedido
+    if (r.data) { guardar(r.data.id); setProfile(r.data) }
+    return r
+  }
 
-  return <SessaoCtx.Provider value={{ profile, entrar, sair }}>{children}</SessaoCtx.Provider>
+  const valor = {
+    profile,
+    entrar: (valores) => comecar(entrarDados(valores)),
+    criarConta: (valores) => comecar(criarContaDados(valores)),
+    atualizarPerfil: setProfile,
+    // Relê a conta: liberada, o App troca de tela sozinho; desativada, volta ao login.
+    // shortcut: no mock o perfil vive na memória desta aba, então só muda de verdade com o banco.
+    conferirConta: () => {
+      if (!profile) return
+      const p = obterPerfil(profile.id)
+      if (!p) { guardar(null); setProfile(null) } else if (p.role !== profile.role) setProfile(p)
+    },
+    sair: () => { guardar(null); setProfile(null) },
+  }
+  return <SessaoCtx.Provider value={valor}>{children}</SessaoCtx.Provider>
 }
 
 export const useSessao = () => useContext(SessaoCtx)

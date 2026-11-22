@@ -2,7 +2,7 @@
 // O componente <Formulario> desenha a partir daqui; a regra de "o que é válido"
 // mora aqui para o teste alcançar.
 //
-// tipo: texto | textoLongo | email | numero | dinheiro | data | lista
+// tipo: texto | textoLongo | email | senha | numero | dinheiro | data | lista
 // visivel(valores): o campo só aparece (e só é cobrado) quando devolve true.
 // opcoesDe: nome da lista que a tela injeta (ex.: as frentes da obra atual).
 import {
@@ -76,6 +76,22 @@ export const CAMPOS_NOTA = [
   { nome: 'descricao', rotulo: 'Descrição', tipo: 'texto', inteiro: true },
 ]
 
+// ---------- conta ----------
+export const CAMPOS_ENTRAR = [
+  { nome: 'email', rotulo: 'Email', tipo: 'email', obrigatorio: true, auto: 'email' },
+  { nome: 'senha', rotulo: 'Senha', tipo: 'senha', obrigatorio: true, auto: 'current-password' },
+]
+
+export const CAMPOS_CRIAR_CONTA = [
+  { nome: 'nome', rotulo: 'Nome', tipo: 'texto', obrigatorio: true, auto: 'name' },
+  { nome: 'email', rotulo: 'Email', tipo: 'email', obrigatorio: true, auto: 'email' },
+  { nome: 'senha', rotulo: 'Senha', tipo: 'senha', obrigatorio: true, minCaracteres: 8, auto: 'new-password', ajuda: 'Mínimo 8 caracteres.' },
+]
+
+export const CAMPOS_MEU_NOME = [
+  { nome: 'nome', rotulo: 'Nome', tipo: 'texto', obrigatorio: true, auto: 'name' },
+]
+
 export function camposDiario(tipo) {
   const campos = []
   if (tipo === 'Avanço') campos.push({ nome: 'frente_id', rotulo: 'Frente', tipo: 'lista', opcoesDe: 'frentes', obrigatorio: true })
@@ -124,6 +140,8 @@ export function validar(campos, valores) {
       else if (c.max !== undefined && n > c.max) erros[c.nome] = `Máximo ${c.max}.`
     }
     if (c.tipo === 'lista' && c.opcoes && !c.opcoes.includes(bruto)) erros[c.nome] = 'Escolha uma opção da lista.'
+    if (c.tipo === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(bruto).trim())) erros[c.nome] = 'Email inválido. Ex.: nome@gmail.com'
+    if (c.minCaracteres && String(bruto).length < c.minCaracteres) erros[c.nome] = `Mínimo ${c.minCaracteres} caracteres.`
   }
   return erros
 }
