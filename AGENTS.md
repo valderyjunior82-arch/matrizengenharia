@@ -185,7 +185,7 @@ Esta seção é **substituída** no fim de cada conversa, não acumula. O que j�
 4. `salvarMeuNome` (`dados.js`) não confere se a conta existe e está ativa, e não usa `validar(CAMPOS_MEU_NOME)`.
 5. O link "Criar conta / Entrar" do login usa `.link`, que é mono em caixa-alta; a convenção visual não permite.
 
-**Módulo obras e seletor (22/11, no GitHub, 13 itens aprovados, revisão de código feita):** Cadastrar, Editar e Excluir obra (só sem registros), Adicionar e Remover mestre da obra (nunca da última obra aberta dele; desativado sai livre), seletor recarrega na hora (`recarregarObras`). Regras em `src/lib/obras.js`, testadas em `tests/obras.mjs`. Ponto aberto da revisão, decisão do engenheiro: concluir ou excluir uma obra pode deixar um Mestre sem nenhuma obra (o Remover impede, esses dois caminhos não).
+**Módulo obras e seletor (22/11, no GitHub, 13 itens aprovados, revisão de código feita):** Cadastrar, Editar e Excluir obra (só sem registros), Adicionar e Remover mestre da obra (nunca da última obra aberta dele; desativado sai livre), seletor recarrega na hora (`recarregarObras`). Regras em `src/lib/obras.js`, testadas em `tests/obras.mjs`. Decidido pelo engenheiro em 22/11: concluir ou excluir uma obra pode deixar um Mestre sem nenhuma obra, sem aviso (obra que acabou, acabou). Só o Remover impede tirar da última. Não "conserte".
 
 **Fora dos módulos, ainda só com aviso "entra na etapa do banco":** todos os formulários de gravação (frente, diário, material, nota, parcela).
 
