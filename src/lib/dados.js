@@ -12,9 +12,10 @@
 import { USAR_MOCK, hoje } from './config.js'
 import { daObra, obrasDoSeletor, obrasVisiveis } from './escopo.js'
 import { emailEmUso, normalizarEmail, obrasDoAcesso, papelDaNovaConta, podeGerenciar } from './pessoas.js'
-import { CAMPOS_CRIAR_CONTA, CAMPOS_OBRA, validar } from './formularios.js'
+import { CAMPOS_CONTRATO, CAMPOS_CRIAR_CONTA, CAMPOS_FRENTE, CAMPOS_OBRA, paraNumero, validar } from './formularios.js'
+import { camposDaFrente, frenteTemRegistros, MSG_FRENTE_COM_REGISTROS, podeMarcarPronta } from './frentes.js'
 import { codigoEmUso, erroAoRemover, MSG_OBRA_COM_REGISTROS, obraTemRegistros, podeEntrarNaObra } from './obras.js'
-import { ehEngenheiro } from './permissoes.js'
+import { ehEngenheiro, ehMestre } from './permissoes.js'
 import {
   mockProfiles, mockSenhas, SENHA_DE_TESTE, mockObras, mockMembros, mockFrentes, mockContratos,
   mockRegistros, mockFotos, mockMateriais, mockLancamentos,
@@ -88,8 +89,8 @@ export const criarConta = (valores) => responder(() => {
 // Todas as obras que a pessoa enxerga (o Engenheiro vê também a interna "Empresa").
 export const listarObras = (profile) => responder(() => obrasVisiveis(db.obras, db.membros, profile))
 
-function exigirEngenheiro(quem) {
-  if (!ehEngenheiro(quem)) throw new Error('Só o Engenheiro cadastra obras.')
+function exigirEngenheiro(quem, oQue = 'cadastra obras') {
+  if (!ehEngenheiro(quem)) throw new Error(`Só o Engenheiro ${oQue}.`)
 }
 
 function obraDoCadastro(id) {
@@ -159,23 +160,54 @@ function frenteDaObra(id) {
   return f
 }
 
-export const aprovarFrente = (id) => responder(() => {
+// Nova frente (id = null) ou edição. A obra é sempre a escolhida no topo.
+export const salvarFrente = (quem, id, valores) => responder(() => {
+  exigirEngenheiro(quem, 'cadastra e edita frentes')
+  if (Object.keys(validar(CAMPOS_FRENTE, valores)).length) throw new Error('Confira os campos marcados.')
+  if (id) {
+    const f = frenteDaObra(id)
+    return Object.assign(f, camposDaFrente(valores, f, hoje()))
+  }
+  const f = {
+    id: crypto.randomUUID(), obra_id: exigirObra(), ultimo_avanco_em: null,
+    marcada_pronta_por: null, marcada_pronta_em: null, comentario_devolucao: null,
+    ...camposDaFrente(valores, null, hoje()),
+  }
+  db.frentes.push(f)
+  return f
+})
+
+export const excluirFrente = (quem, id) => responder(() => {
+  exigirEngenheiro(quem, 'exclui frentes')
+  frenteDaObra(id)
+  const { registros, fotos, materiais, contratos, lancamentos } = db
+  if (frenteTemRegistros(id, { registros, fotos, materiais, contratos, lancamentos })) throw new Error(MSG_FRENTE_COM_REGISTROS)
+  db.frentes = db.frentes.filter((f) => f.id !== id)
+  return { id }
+})
+
+export const aprovarFrente = (quem, id) => responder(() => {
+  exigirEngenheiro(quem, 'aprova frentes')
   const f = frenteDaObra(id)
+  if (f.situacao !== 'Aguardando aprovação') throw new Error('Esta frente não está aguardando aprovação.')
   Object.assign(f, { situacao: 'Concluída', percentual: 100, data_conclusao: hoje(), comentario_devolucao: null })
   return f
 })
 
-export const devolverFrente = (id, comentario) => responder(() => {
+export const devolverFrente = (quem, id, comentario) => responder(() => {
+  exigirEngenheiro(quem, 'devolve frentes')
   if (!comentario?.trim()) throw new Error('Escreva o motivo da devolução.')
   const f = frenteDaObra(id)
+  if (f.situacao !== 'Aguardando aprovação') throw new Error('Esta frente não está aguardando aprovação.')
   Object.assign(f, { situacao: 'Em andamento', comentario_devolucao: comentario.trim(), marcada_pronta_por: null, marcada_pronta_em: null })
   return f
 })
 
-export const marcarFrentePronta = (id, profile) => responder(() => {
+export const marcarFrentePronta = (quem, id) => responder(() => {
+  if (!ehEngenheiro(quem) && !ehMestre(quem)) throw new Error('Sua conta não pode marcar frentes como prontas.')
   const f = frenteDaObra(id)
-  if (['Concluída', 'Aguardando aprovação'].includes(f.situacao)) throw new Error('Esta frente já está pronta.')
-  Object.assign(f, { situacao: 'Aguardando aprovação', marcada_pronta_por: profile.id, marcada_pronta_em: new Date().toISOString() })
+  if (!podeMarcarPronta(f)) throw new Error('Esta frente já está pronta.')
+  Object.assign(f, { situacao: 'Aguardando aprovação', marcada_pronta_por: quem.id, marcada_pronta_em: new Date().toISOString() })
   return f
 })
 
@@ -196,6 +228,21 @@ export const mudarSituacaoMaterial = (id, situacao) => responder(() => {
 // ---------- dinheiro (só o Engenheiro chega nas telas que chamam isto) ----------
 export const listarContratos = () => responder(() => daObra(db.contratos, exigirObra()))
 export const listarLancamentos = () => responder(() => daObra(db.lancamentos, exigirObra()))
+
+// Um contrato por frente (é dele que sai o "falta pagar" do empreiteiro).
+export const salvarContrato = (quem, frenteId, valores) => responder(() => {
+  exigirEngenheiro(quem, 'cadastra contratos')
+  if (Object.keys(validar(CAMPOS_CONTRATO, valores)).length) throw new Error('Confira os campos marcados.')
+  const f = frenteDaObra(frenteId)
+  if (db.contratos.some((c) => c.frente_id === f.id)) throw new Error('Esta frente já tem contrato.')
+  const c = {
+    id: crypto.randomUUID(), obra_id: f.obra_id, frente_id: f.id,
+    empreiteiro: valores.empreiteiro.trim(), valor_contratado: paraNumero(valores.valor_contratado),
+    observacao: String(valores.observacao ?? '').trim() || null,
+  }
+  db.contratos.push(c)
+  return c
+})
 
 export const marcarParcelaRecebida = (id, { data, forma_pagamento }) => responder(() => {
   const l = daObra(db.lancamentos, exigirObra()).find((x) => x.id === id)

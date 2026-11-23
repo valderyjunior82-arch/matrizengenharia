@@ -36,7 +36,7 @@ export function TextoAndamento({ frente, hoje }) {
   if (frente.situacao === 'Concluída') return <span className="s">concluída {dataCurta(frente.data_conclusao)}</span>
   if (frente.situacao === 'Aguardando aprovação') return <span className="s">pronta, aguardando</span>
   const d = diasSemAndar(frente, hoje)
-  if (d === null) return <span className="s">começa {dataCurta(frente.data_inicio_prevista)}</span>
+  if (d === null) return <span className="s">{frente.data_inicio_prevista ? `começa ${dataCurta(frente.data_inicio_prevista)}` : 'sem data de início'}</span>
   if (d === 0) return <span className="s"><strong>andou hoje</strong></span>
   return <span className="s"><strong>{d}</strong> {d === 1 ? 'dia' : 'dias'} sem andar</span>
 }

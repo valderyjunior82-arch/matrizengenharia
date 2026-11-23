@@ -13,7 +13,7 @@ import { FolhaDevolver, LinhaFrente, LinhaMaterial } from '../components/pecas.j
 
 const curto = (lista) => (lista.length ? lista.map((f) => f.servico.split(/[\s–]/)[0]).join(' · ') : 'nenhuma')
 
-export default function Hoje({ goto }) {
+export default function Hoje({ goto, profile }) {
   const { obra } = useObra()
   const hoje = hojeDe()
   const [devolvendo, setDevolvendo] = useState(null)
@@ -67,7 +67,7 @@ export default function Hoje({ goto }) {
                     <Chip nivel="info">{f.percentual}%</Chip>
                   </div>
                   <div className="acoes">
-                    <button className="btn pri" onClick={() => agir(aprovarFrente(f.id), 'Frente aprovada. Saiu do painel.')}>Aprovar</button>
+                    <button className="btn pri" onClick={() => agir(aprovarFrente(profile, f.id), 'Frente aprovada. Saiu do painel.')}>Aprovar</button>
                     <button className="btn sec" onClick={() => setDevolvendo(f)}>Devolver</button>
                   </div>
                 </div>
@@ -137,7 +137,7 @@ export default function Hoje({ goto }) {
 
       {devolvendo && (
         <FolhaDevolver frente={devolvendo} onFechar={() => setDevolvendo(null)}
-          onConfirmar={(motivo) => { setDevolvendo(null); agir(devolverFrente(devolvendo.id, motivo), 'Frente devolvida para "Em andamento".') }} />
+          onConfirmar={(motivo) => { setDevolvendo(null); agir(devolverFrente(profile, devolvendo.id, motivo), 'Frente devolvida para "Em andamento".') }} />
       )}
     </>
   )

@@ -1,6 +1,7 @@
 // Regras das frentes de serviço: "dias sem andar", cor da linha, ordem do painel.
 // Tudo puro (sem React, sem banco): é o que os testes em tests/frentes.mjs conferem.
 import { diasEntre } from './datas.js'
+import { paraNumero } from './formularios.js'
 import { DIAS_LIMITE_ATENCAO, DIAS_SEM_ANDAR_ATENCAO } from './vocabulario.js'
 
 const FORA_DO_PAINEL = ['Concluída', 'Aguardando aprovação']
@@ -106,4 +107,36 @@ export function prazoCorrido(obra, hoje) {
   const total = diasEntre(obra.data_inicio, obra.data_meta_entrega)
   if (total <= 0) return 100
   return Math.max(0, Math.min(100, Math.round((diasEntre(obra.data_inicio, hoje) / total) * 100)))
+}
+
+// Excluir só frente limpa: se o diário, uma foto, um material, um contrato ou
+// um lançamento aponta para ela, apagar deixaria esse registro órfão.
+// tabelas: { registros, fotos, ... } — toda lista que tem frente_id.
+export const frenteTemRegistros = (frenteId, tabelas) =>
+  Object.values(tabelas).some((linhas) => linhas.some((l) => l.frente_id === frenteId))
+
+export const MSG_FRENTE_COM_REGISTROS = 'Esta frente já tem registros (diário, fotos, materiais ou contrato). Mude a situação em vez de excluir.'
+
+// Do formulário para o que se grava. `anterior` = a frente antes da edição (ou null).
+// Virar Concluída pelo formulário grava a data de conclusão (é ela que mede o atraso);
+// sair de Concluída apaga a data. Subir o % conta como avanço (zera os "dias sem andar").
+export function camposDaFrente(valores, anterior, hoje) {
+  const texto = (n) => String(valores[n] ?? '').trim() || null
+  const situacao = valores.situacao
+  const concluida = situacao === 'Concluída'
+  const percentual = concluida ? 100 : Math.round(paraNumero(valores.percentual))
+  return {
+    servico: texto('servico'),
+    ambiente: texto('ambiente'),
+    responsavel: texto('responsavel'),
+    situacao,
+    data_inicio_prevista: texto('data_inicio_prevista'),
+    data_termino_prevista: texto('data_termino_prevista'),
+    data_limite_decisao: texto('data_limite_decisao'),
+    percentual,
+    data_conclusao: concluida ? (anterior?.data_conclusao || hoje) : null,
+    ...(concluida ? { comentario_devolucao: null } : {}),
+    ...(anterior && percentual > anterior.percentual ? { ultimo_avanco_em: hoje } : {}),
+    ...(situacao !== 'Aguardando aprovação' ? { marcada_pronta_por: null, marcada_pronta_em: null } : {}),
+  }
 }

@@ -186,7 +186,9 @@ Esta seção é **substituída** no fim de cada conversa, não acumula. O que j�
 
 Também sem conserto: o cadastro de obra aceita data-meta de entrega anterior à data de início.
 
-**Ainda só com aviso "entra na etapa do banco":** os formulários de gravação de frente, diário, material, nota e parcela.
+**Frentes de serviço** (23/11, sem commit): Nova frente, Editar, Cadastrar contrato e Excluir gravam no mock. Excluir só frente sem registros (decisão do engenheiro em 22/11). Rodada 5 aprovada (12 itens); a página diz "Nada a testar agora". Falta rodar `/code-review` antes de subir (mexe em `dados.js`).
+
+**Ainda só com aviso "entra na etapa do banco":** os formulários de gravação de diário, material, nota e parcela.
 
 **Próximo passo:** a **etapa do Supabase**. É a recomendação do agente, mas o engenheiro ainda não confirmou: pergunte no começo da conversa nova. É nela que login, pessoas, obras e membros passam a gravar de verdade, com a RLS por `membros` e o seed das duas obras. Ele quer usar de verdade a partir de 23/11, e com o mock nada sobrevive ao F5. Alternativa: os 5 pontos acima.
 

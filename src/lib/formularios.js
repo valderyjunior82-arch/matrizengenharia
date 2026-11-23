@@ -3,6 +3,7 @@
 // mora aqui para o teste alcançar.
 //
 // tipo: texto | textoLongo | email | senha | numero | dinheiro | data | lista
+// naoAntesDe: nome de outro campo data; esta data não pode ser anterior a ele.
 // visivel(valores): o campo só aparece (e só é cobrado) quando devolve true.
 // opcoesDe: nome da lista que a tela injeta (ex.: as frentes da obra atual).
 import {
@@ -26,7 +27,7 @@ export const CAMPOS_FRENTE = [
   { nome: 'responsavel', rotulo: 'Responsável', tipo: 'texto', ajuda: 'Empresa ou pessoa' },
   { nome: 'situacao', rotulo: 'Situação', tipo: 'lista', opcoes: SITUACOES_FRENTE, obrigatorio: true, padrao: 'Não iniciada' },
   { nome: 'data_inicio_prevista', rotulo: 'Início previsto', tipo: 'data' },
-  { nome: 'data_termino_prevista', rotulo: 'Término previsto', tipo: 'data' },
+  { nome: 'data_termino_prevista', rotulo: 'Término previsto', tipo: 'data', naoAntesDe: 'data_inicio_prevista' },
   { nome: 'data_limite_decisao', rotulo: 'Data limite de decisão', tipo: 'data', ajuda: 'Se nada for decidido até esta data, a obra atrasa.' },
   { nome: 'percentual', rotulo: '% de avanço', tipo: 'numero', min: 0, max: 100, obrigatorio: true, padrao: '0' },
 ]
@@ -142,6 +143,10 @@ export function validar(campos, valores) {
     if (c.tipo === 'lista' && c.opcoes && !c.opcoes.includes(bruto)) erros[c.nome] = 'Escolha uma opção da lista.'
     if (c.tipo === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(bruto).trim())) erros[c.nome] = 'Email inválido. Ex.: nome@gmail.com'
     if (c.minCaracteres && String(bruto).length < c.minCaracteres) erros[c.nome] = `Mínimo ${c.minCaracteres} caracteres.`
+    const antes = c.naoAntesDe && valores[c.naoAntesDe]
+    if (antes && String(bruto) < String(antes)) {
+      erros[c.nome] = `Não pode ser antes de: ${campos.find((x) => x.nome === c.naoAntesDe)?.rotulo ?? c.naoAntesDe}.`
+    }
   }
   return erros
 }

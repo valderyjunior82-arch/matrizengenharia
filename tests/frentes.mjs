@@ -1,8 +1,9 @@
 // Regras das frentes, com os dados de exemplo do PRD ("hoje" = 23/11/2026).
 // Critério do PRD: frentes 2 e 7 vermelhas, 3 e 4 amarelas.
-import { diasSemAndar, frentesDoPainel, nivelFrente, podeMarcarPronta, reguaDaFrente, textoLimite } from '../src/lib/frentes.js'
+import { camposDaFrente, diasSemAndar, frenteTemRegistros, frentesDoPainel, nivelFrente, podeMarcarPronta, reguaDaFrente, textoLimite } from '../src/lib/frentes.js'
 import { materiaisParaChegar } from '../src/lib/materiais.js'
-import { mockFrentes, mockMateriais } from '../src/lib/mockData.js'
+import { mockContratos, mockFotos, mockFrentes, mockLancamentos, mockMateriais, mockRegistros } from '../src/lib/mockData.js'
+import { CAMPOS_FRENTE, validar } from '../src/lib/formularios.js'
 
 let ok = 0
 let tot = 0
@@ -38,6 +39,38 @@ conferir('frente sem data limite vai para o fim',
 conferir('texto da vencida', textoLimite(f('f2'), HOJE).longo, 'Vencida há 5 dias')
 conferir('não marca pronta o que já aguarda aprovação', podeMarcarPronta(f('f6')), false)
 conferir('marca pronta o que está em andamento', podeMarcarPronta(f('f3')), true)
+
+// Excluir só frente sem registros
+const tabelas = { registros: mockRegistros, fotos: mockFotos, materiais: mockMateriais, contratos: mockContratos, lancamentos: mockLancamentos }
+conferir('Forro tem diário e contrato: não exclui', frenteTemRegistros('f2', tabelas), true)
+conferir('Bancadas sem nada ligado: exclui', frenteTemRegistros('f5', tabelas), false)
+conferir('frente nova: exclui', frenteTemRegistros('nova', tabelas), false)
+
+// Formulário de frente
+const base = { servico: 'Gesso', ambiente: 'Sala', situacao: 'Não iniciada', percentual: '0' }
+conferir('término antes do início é recusado',
+  Object.keys(validar(CAMPOS_FRENTE, { ...base, data_inicio_prevista: '2026-12-10', data_termino_prevista: '2026-12-01' })), ['data_termino_prevista'])
+conferir('término no mesmo dia do início passa',
+  validar(CAMPOS_FRENTE, { ...base, data_inicio_prevista: '2026-12-10', data_termino_prevista: '2026-12-10' }), {})
+conferir('% acima de 100 é recusado', Object.keys(validar(CAMPOS_FRENTE, { ...base, percentual: '120' })), ['percentual'])
+conferir('serviço vazio é recusado', Object.keys(validar(CAMPOS_FRENTE, { ...base, servico: '  ' })), ['servico'])
+
+const nova = camposDaFrente({ ...base, servico: '  Gesso ', responsavel: '', percentual: '35' }, null, HOJE)
+conferir('grava texto aparado, vazio vira null, % vira número', [nova.servico, nova.responsavel, nova.percentual], ['Gesso', null, 35])
+const conc = camposDaFrente({ ...base, situacao: 'Concluída', percentual: '60' }, null, HOJE)
+conferir('virar Concluída pelo formulário grava hoje e 100%', [conc.data_conclusao, conc.percentual], [HOJE, 100])
+conferir('editar uma concluída mantém a data de conclusão',
+  camposDaFrente({ ...base, situacao: 'Concluída', percentual: '100' }, f('f1'), HOJE).data_conclusao, '2026-10-30')
+conferir('sair de Concluída apaga a data de conclusão',
+  camposDaFrente({ ...base, situacao: 'Em andamento', percentual: '90' }, f('f1'), HOJE).data_conclusao, null)
+
+conferir('concluir pelo Editar apaga o aviso de devolução',
+  camposDaFrente({ ...base, situacao: 'Concluída', percentual: '100' }, { ...f('f3'), comentario_devolucao: 'Falta teste' }, HOJE).comentario_devolucao, null)
+conferir('subir o % pelo Editar conta como avanço hoje',
+  camposDaFrente({ ...base, situacao: 'Em andamento', percentual: '60' }, f('f3'), HOJE).ultimo_avanco_em, HOJE)
+conferir('não mexer no % não conta como avanço',
+  'ultimo_avanco_em' in camposDaFrente({ ...base, situacao: 'Em andamento', percentual: String(f('f3').percentual) }, f('f3'), HOJE), false)
+conferir('% com vírgula vira número', camposDaFrente({ ...base, percentual: '35,4' }, null, HOJE).percentual, 35)
 
 // Régua de prazo
 conferir('régua do porcelanato: hoje no meio, limite logo depois',

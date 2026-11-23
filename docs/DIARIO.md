@@ -36,3 +36,15 @@ Uma linha por item aprovado na página de testes: data · o que mudou · o que p
 - 22/11/2026 · Obras (correção da revisão) · Mestre desativado sai até da última obra; ativo continua sem poder.
 - 22/11/2026 · Obras (correção da revisão) · Etiqueta de situação da obra é neutra (cinza).
 - 22/11/2026 · Obras (correção da revisão) · Abrir esta obra só aparece em obra aberta no seletor e que não é a atual.
+- 23/11/2026 · Frentes · Cadastrar frente nova (clique duplo não repete).
+- 23/11/2026 · Frentes · Formulário recusa serviço vazio, término antes do início e % acima de 100.
+- 23/11/2026 · Frentes · Editar responsável, % e situação.
+- 23/11/2026 · Frentes · Concluir pelo Editar grava 100% e a data de conclusão.
+- 23/11/2026 · Frentes · Cadastrar contrato do empreiteiro (campos vazios recusados).
+- 23/11/2026 · Frentes · Excluir frente sem registros (com confirmação).
+- 23/11/2026 · Frentes · Frente com registros não pode ser excluída.
+- 23/11/2026 · Frentes · Aprovar e Devolver pelo Hoje continuam funcionando.
+- 23/11/2026 · Frentes · Uma obra não vê a frente da outra (1802 × 501).
+- 23/11/2026 · Frentes · Mestre vê as frentes sem dinheiro e sem editar.
+- 23/11/2026 · Frentes · Mestre marca pronta e a frente vai para Para aprovar.
+- 23/11/2026 · Frentes · A tela funciona na largura de celular.

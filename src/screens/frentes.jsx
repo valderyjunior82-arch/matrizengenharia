@@ -1,7 +1,7 @@
 // Frentes — todas as frentes da obra, agrupadas por situação, com filtro por ambiente.
 import { useState } from 'react'
 import { hoje as hojeDe } from '../lib/config.js'
-import { listarFrentes } from '../lib/dados.js'
+import { listarFrentes, salvarFrente } from '../lib/dados.js'
 import { useCarregar } from '../lib/usarDados.js'
 import { agruparPorSituacao, ambientesDe } from '../lib/frentes.js'
 import { CAMPOS_FRENTE } from '../lib/formularios.js'
@@ -52,7 +52,13 @@ export default function Frentes({ goto, params, profile }) {
       {criando && (
         <Folha titulo="Nova frente" onFechar={() => setCriando(false)}>
           <Formulario campos={CAMPOS_FRENTE} listas={{ ambientes }} duasColunas onCancelar={() => setCriando(false)}
-            onSalvar={() => { setCriando(false); avisar('Campos conferidos. Gravar de verdade entra na etapa do banco.') }} />
+            rotuloSalvar="Cadastrar frente" onSalvar={async (v) => {
+              const r = await salvarFrente(profile, null, v)
+              if (r.erro) { avisar(r.erro); return }
+              setCriando(false)
+              avisar('Frente cadastrada.')
+              recarregar()
+            }} />
         </Folha>
       )}
     </>

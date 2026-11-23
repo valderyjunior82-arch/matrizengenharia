@@ -3,11 +3,11 @@
 import { useState } from 'react'
 import { hoje as hojeDe } from '../lib/config.js'
 import {
-  aprovarFrente, devolverFrente, listarContratos, listarFotos, listarLancamentos,
-  listarMateriais, listarRegistros, marcarFrentePronta, obterFrente,
+  aprovarFrente, devolverFrente, excluirFrente, listarContratos, listarFotos, listarLancamentos,
+  listarFrentes, listarMateriais, listarRegistros, marcarFrentePronta, obterFrente, salvarContrato, salvarFrente,
 } from '../lib/dados.js'
 import { useCarregar, juntar } from '../lib/usarDados.js'
-import { diasSemAndar, nivelFrente, podeMarcarPronta, textoLimite } from '../lib/frentes.js'
+import { ambientesDe, diasSemAndar, nivelFrente, podeMarcarPronta, textoLimite } from '../lib/frentes.js'
 import { pagoDoContrato } from '../lib/financeiro.js'
 import { CAMPOS_CONTRATO, CAMPOS_FRENTE } from '../lib/formularios.js'
 import { ehEngenheiro } from '../lib/permissoes.js'
@@ -21,13 +21,15 @@ export default function Frente({ goto, voltar: volta, params, profile }) {
   const hoje = hojeDe()
   const engenheiro = ehEngenheiro(profile)
   const [aba, setAba] = useState('avanco')
-  const [folha, setFolha] = useState(null) // 'editar' | 'devolver' | 'pronta' | 'contrato'
+  const [folha, setFolha] = useState(null) // 'editar' | 'devolver' | 'pronta' | 'contrato' | 'excluir'
+  const [enviando, setEnviando] = useState(false)
   const { carregando, erro, data, recarregar } = useCarregar(() => juntar({
     frente: obterFrente(params.id),
     registros: listarRegistros(),
     fotos: listarFotos(),
     materiais: listarMateriais(),
-    ...(engenheiro ? { contratos: listarContratos(), lancamentos: listarLancamentos() } : {}),
+    // Só o Engenheiro: dinheiro e as frentes (para sugerir ambientes no Editar).
+    ...(engenheiro ? { contratos: listarContratos(), lancamentos: listarLancamentos(), frentes: listarFrentes() } : {}),
   }))
 
   const voltar = <BotaoVoltar voltar={volta} />
@@ -47,6 +49,24 @@ export default function Frente({ goto, voltar: volta, params, profile }) {
     const { erro: e } = await acao
     avisar(e || mensagem)
     recarregar()
+  }
+
+  // Formulário: com erro, a folha fica aberta para corrigir.
+  const gravar = async (acao, mensagem) => {
+    const { erro: e } = await acao
+    if (e) { avisar(e); return }
+    setFolha(null)
+    avisar(mensagem)
+    recarregar()
+  }
+
+  const excluir = async () => {
+    setEnviando(true)
+    const { erro: e } = await excluirFrente(profile, f.id)
+    setEnviando(false)
+    if (e) { setFolha(null); avisar(e); return }
+    avisar('Frente excluída.')
+    goto('frentes')
   }
 
   const abas = [['avanco', 'Avanço'], ['fotos', 'Fotos'], ['materiais', 'Materiais'], ...(engenheiro ? [['contrato', 'Contrato']] : [])]
@@ -120,12 +140,13 @@ export default function Frente({ goto, voltar: volta, params, profile }) {
         </div>
         <div className="acoes">
           {f.situacao === 'Aguardando aprovação' && engenheiro && <>
-            <button className="btn pri" onClick={() => agir(aprovarFrente(f.id), 'Frente aprovada.')}>Aprovar</button>
+            <button className="btn pri" onClick={() => agir(aprovarFrente(profile, f.id), 'Frente aprovada.')}>Aprovar</button>
             <button className="btn sec" onClick={() => setFolha('devolver')}>Devolver</button>
           </>}
           {f.situacao === 'Aguardando aprovação' && !engenheiro && <div className="aviso" style={{ gridColumn: '1 / -1', padding: 0 }}>Pronta. Aguardando a aprovação do engenheiro.</div>}
-          {podeMarcarPronta(f) && <button className="btn pri" style={engenheiro ? null : { gridColumn: '1 / -1' }} onClick={() => setFolha('pronta')}>Marcar como pronta</button>}
-          {engenheiro && <button className="btn sec" style={f.situacao === 'Concluída' ? { gridColumn: '1 / -1' } : null} onClick={() => setFolha('editar')}>Editar</button>}
+          {podeMarcarPronta(f) && <button className="btn pri" style={{ gridColumn: '1 / -1' }} onClick={() => setFolha('pronta')}>Marcar como pronta</button>}
+          {engenheiro && <button className="btn sec" onClick={() => setFolha('editar')}>Editar</button>}
+          {engenheiro && <button className="btn sec" onClick={() => setFolha('excluir')}>Excluir</button>}
         </div>
       </div>
 
@@ -134,28 +155,39 @@ export default function Frente({ goto, voltar: volta, params, profile }) {
         {corpo}
       </div>
 
-      {folha === 'devolver' && <FolhaDevolver frente={f} onFechar={() => setFolha(null)} onConfirmar={(m) => agir(devolverFrente(f.id, m), 'Frente devolvida.')} />}
+      {folha === 'devolver' && <FolhaDevolver frente={f} onFechar={() => setFolha(null)} onConfirmar={(m) => agir(devolverFrente(profile, f.id, m), 'Frente devolvida.')} />}
       {folha === 'pronta' && (
         <Folha titulo="Marcar como pronta" onFechar={() => setFolha(null)}>
           <div className="form">
             <p style={{ fontSize: 17 }}>Marcar esta frente como pronta? O engenheiro vai aprovar.</p>
             <div className="acoes" style={{ padding: 0 }}>
               <button className="btn sec" onClick={() => setFolha(null)}>Cancelar</button>
-              <button className="btn pri" onClick={() => agir(marcarFrentePronta(f.id, profile), 'Marcada como pronta. Foi para aprovação.')}>Marcar pronta</button>
+              <button className="btn pri" onClick={() => agir(marcarFrentePronta(profile, f.id), 'Marcada como pronta. Foi para aprovação.')}>Marcar pronta</button>
             </div>
           </div>
         </Folha>
       )}
       {folha === 'editar' && (
         <Folha titulo={`Editar · ${f.servico}`} onFechar={() => setFolha(null)}>
-          <Formulario campos={CAMPOS_FRENTE} inicial={{ ...f, percentual: String(f.percentual) }} duasColunas onCancelar={() => setFolha(null)}
-            onSalvar={() => { setFolha(null); avisar('Campos conferidos. Gravar de verdade entra na etapa do banco.') }} />
+          <Formulario campos={CAMPOS_FRENTE} inicial={{ ...f, percentual: String(f.percentual) }} listas={{ ambientes: ambientesDe(data.frentes) }}
+            duasColunas onCancelar={() => setFolha(null)} onSalvar={(v) => gravar(salvarFrente(profile, f.id, v), 'Frente salva.')} />
         </Folha>
       )}
       {folha === 'contrato' && (
         <Folha titulo="Cadastrar contrato" onFechar={() => setFolha(null)}>
-          <Formulario campos={CAMPOS_CONTRATO} onCancelar={() => setFolha(null)}
-            onSalvar={() => { setFolha(null); avisar('Campos conferidos. Gravar de verdade entra na etapa do banco.') }} />
+          <Formulario campos={CAMPOS_CONTRATO} rotuloSalvar="Cadastrar contrato" onCancelar={() => setFolha(null)}
+            onSalvar={(v) => gravar(salvarContrato(profile, f.id, v), 'Contrato cadastrado.')} />
+        </Folha>
+      )}
+      {folha === 'excluir' && (
+        <Folha titulo="Excluir frente" onFechar={() => setFolha(null)}>
+          <div className="form">
+            <p style={{ fontSize: 17 }}>Excluir a frente <b>{f.servico}</b>? Não dá para desfazer.</p>
+            <div className="acoes" style={{ padding: 0 }}>
+              <button className="btn sec" disabled={enviando} onClick={() => setFolha(null)}>Não excluir</button>
+              <button className="btn perigo" disabled={enviando} onClick={excluir}>{enviando ? 'Excluindo…' : 'Sim, excluir'}</button>
+            </div>
+          </div>
         </Folha>
       )}
     </>
