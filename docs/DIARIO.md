@@ -32,3 +32,7 @@ Uma linha por item aprovado na página de testes: data · o que mudou · o que p
 - 22/11/2026 · Obras · Obra com registros não pode ser excluída.
 - 22/11/2026 · Seletor · O app volta na obra em que a pessoa estava.
 - 22/11/2026 · Obras · A tela funciona na largura de celular.
+- 22/11/2026 · Obras (correção da revisão) · Clique duplo em Sim, excluir não mostra erro.
+- 22/11/2026 · Obras (correção da revisão) · Mestre desativado sai até da última obra; ativo continua sem poder.
+- 22/11/2026 · Obras (correção da revisão) · Etiqueta de situação da obra é neutra (cinza).
+- 22/11/2026 · Obras (correção da revisão) · Abrir esta obra só aparece em obra aberta no seletor e que não é a atual.
