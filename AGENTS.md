@@ -167,38 +167,32 @@ Resposta curta, em português simples, sem jargão:
 - o que não deu para conferir e por quê;
 - o que espera uma decisão dele: uma pergunta por vez, com a recomendação do agente.
 
-## Onde paramos (22/11/2026)
+## Onde paramos (22/11/2026, fim da conversa)
 
 Esta seção é **substituída** no fim de cada conversa, não acumula. O que já passou nos testes fica em `docs/DIARIO.md`.
 
-**Pronto (no GitHub, commit `947d3b0`):** módulo **login e pessoas**, ainda com dados de exemplo (`USAR_MOCK = true`).
-- Login com email e senha e Criar conta. Regras em `src/lib/pessoas.js`, testadas em `tests/pessoas.mjs`.
-- A tela de espera confere a conta sozinha a cada 15 s.
-- Pessoas: Liberar, Editar, Desativar e Reativar.
-- Meu perfil: Editar nome.
-- A rodada de testes fechou com os 15 itens aprovados. A página diz "Nada a testar agora": https://claude.ai/artifact/DUuJHnZp9uWE75DAtNVTc8
+**Pronto (no GitHub), tudo ainda com dados de exemplo (`USAR_MOCK = true`):**
+- **Login e pessoas** (commit `947d3b0`): Login, Criar conta, tela de espera que confere a cada 15 s, Pessoas (Liberar, Editar, Desativar, Reativar), Meu perfil (Editar nome). Regras em `src/lib/pessoas.js`, testes em `tests/pessoas.mjs`. 15 itens aprovados.
+- **Obras e seletor** (commit `287f6c7`): Nova obra, Editar e Excluir (só obra sem registros), Adicionar e Remover mestre da obra, seletor do topo que se atualiza na hora (`recarregarObras` no `ObraContext`). Regras em `src/lib/obras.js`, testes em `tests/obras.mjs`. 13 itens aprovados. Depois do teste, a revisão de código gerou 5 consertos (excluir travado durante o envio, erro na recarga não derruba o app, mestre desativado sai livre, etiqueta de situação neutra, "Abrir esta obra" pergunta a `obrasDoSeletor`). Passaram no `npm run check` e o agente viu a tela, mas o engenheiro ainda não.
+- **Decidido pelo engenheiro em 22/11:** concluir ou excluir uma obra pode deixar um Mestre sem nenhuma obra, sem aviso ("obra que acabou, acabou"). Só o Remover impede tirar da última. Não "conserte".
+- A página de testes diz "Nada a testar agora": https://claude.ai/artifact/DUuJHnZp9uWE75DAtNVTc8
 
-**Pela metade** (5 pontos menores da revisão de código, sem conserto, o engenheiro ainda não decidiu):
+**Pela metade** (5 pontos menores da revisão do módulo de pessoas, sem conserto, o engenheiro ainda não decidiu):
 1. "Primeira conta vira Engenheiro e cai em Hoje vazio" só tem teste automático. O mock nunca começa sem contas, então não dá para ver na tela.
 2. Falha ao criar conta não mostra a frase do plano: "Não foi possível criar sua conta agora. Tente de novo em alguns minutos."
 3. `src/screens/pessoas.jsx` decide Liberar × Editar com `role === 'Aguardando'` escrito à mão. Pela regra, isso vai para `lib/pessoas.js`, e o texto vem de `vocabulario.js`.
 4. `salvarMeuNome` (`dados.js`) não confere se a conta existe e está ativa, e não usa `validar(CAMPOS_MEU_NOME)`.
 5. O link "Criar conta / Entrar" do login usa `.link`, que é mono em caixa-alta; a convenção visual não permite.
 
-**Módulo obras e seletor (22/11, no GitHub, 13 itens aprovados, revisão de código feita):** Cadastrar, Editar e Excluir obra (só sem registros), Adicionar e Remover mestre da obra (nunca da última obra aberta dele; desativado sai livre), seletor recarrega na hora (`recarregarObras`). Regras em `src/lib/obras.js`, testadas em `tests/obras.mjs`. Decidido pelo engenheiro em 22/11: concluir ou excluir uma obra pode deixar um Mestre sem nenhuma obra, sem aviso (obra que acabou, acabou). Só o Remover impede tirar da última. Não "conserte".
+Também sem conserto: o cadastro de obra aceita data-meta de entrega anterior à data de início.
 
-**Fora dos módulos, ainda só com aviso "entra na etapa do banco":** todos os formulários de gravação (frente, diário, material, nota, parcela).
+**Ainda só com aviso "entra na etapa do banco":** os formulários de gravação de frente, diário, material, nota e parcela.
 
-**Próximo passo:** perguntar ao engenheiro qual destes ele quer:
-- **(a)** os 5 pontos acima;
-- **(b)** o próximo módulo do plano;
-- **(c)** a etapa do Supabase. É nela que login, pessoas e os formulários passam a gravar de verdade, com a RLS por `membros`.
+**Próximo passo:** a **etapa do Supabase**. É a recomendação do agente, mas o engenheiro ainda não confirmou: pergunte no começo da conversa nova. É nela que login, pessoas, obras e membros passam a gravar de verdade, com a RLS por `membros` e o seed das duas obras. Ele quer usar de verdade a partir de 23/11, e com o mock nada sobrevive ao F5. Alternativa: os 5 pontos acima.
 
-Recomendação: **(c)**. Ele quer usar de verdade a partir de 23/11, e com o mock nada sobrevive ao F5.
-
-**Armadilhas do mock que este módulo revelou:**
-- **O F5 zera tudo:** contas criadas, liberações, nomes editados.
-- **Cada aba tem a sua cópia dos dados:** a liberação feita numa aba não chega na outra. Por isso a "entrada automática depois de liberado" só dá para testar com o banco ligado.
+**Armadilhas do mock:**
+- **O F5 zera tudo:** contas, liberações, obras cadastradas, quem está em cada obra.
+- **Cada aba tem a sua cópia dos dados:** o que muda numa aba não chega na outra. Para testar o Mestre vendo uma obra nova, saia e entre como Mestre **na mesma aba**, sem F5.
 - **A senha `obra1234` é só do mock.** Ela fica em `mockSenhas`, à parte de `profiles`, e some na etapa do banco.
 
 ## O que entra neste arquivo
