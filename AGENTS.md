@@ -186,7 +186,7 @@ Esta seção é **substituída** no fim de cada conversa, não acumula. O que j�
 
 Também sem conserto: o cadastro de obra aceita data-meta de entrega anterior à data de início.
 
-**Frentes de serviço** (23/11, sem commit): Nova frente, Editar, Cadastrar contrato e Excluir gravam no mock. Excluir só frente sem registros (decisão do engenheiro em 22/11). Rodada 5 aprovada (12 itens); a página diz "Nada a testar agora". Falta rodar `/code-review` antes de subir (mexe em `dados.js`).
+**Frentes de serviço** (commit `e9377f1`): Nova frente, Editar, Cadastrar contrato e Excluir gravam no mock. Excluir só frente sem registros (decisão do engenheiro em 22/11). Rodada 5 aprovada (12 itens); a página diz "Nada a testar agora". A revisão de código gerou 3 consertos (concluir pelo Editar apaga o aviso de devolução, subir o % pelo Editar conta como avanço, % lido com `paraNumero`), só com teste automático. Ficaram 2 para o engenheiro decidir: sair de Concluída mantém 100%; o formulário deixa pôr "Aguardando aprovação" à mão.
 
 **Ainda só com aviso "entra na etapa do banco":** os formulários de gravação de diário, material, nota e parcela.
 
