@@ -12,7 +12,9 @@
 import { USAR_MOCK, hoje } from './config.js'
 import { daObra, obrasDoSeletor, obrasVisiveis } from './escopo.js'
 import { emailEmUso, normalizarEmail, obrasDoAcesso, papelDaNovaConta, podeGerenciar } from './pessoas.js'
-import { CAMPOS_CRIAR_CONTA, validar } from './formularios.js'
+import { CAMPOS_CRIAR_CONTA, CAMPOS_OBRA, validar } from './formularios.js'
+import { codigoEmUso, erroAoRemover, MSG_OBRA_COM_REGISTROS, obraTemRegistros, podeEntrarNaObra } from './obras.js'
+import { ehEngenheiro } from './permissoes.js'
 import {
   mockProfiles, mockSenhas, SENHA_DE_TESTE, mockObras, mockMembros, mockFrentes, mockContratos,
   mockRegistros, mockFotos, mockMateriais, mockLancamentos,
@@ -85,6 +87,62 @@ export const criarConta = (valores) => responder(() => {
 // ---------- obras ----------
 // Todas as obras que a pessoa enxerga (o Engenheiro vê também a interna "Empresa").
 export const listarObras = (profile) => responder(() => obrasVisiveis(db.obras, db.membros, profile))
+
+function exigirEngenheiro(quem) {
+  if (!ehEngenheiro(quem)) throw new Error('Só o Engenheiro cadastra obras.')
+}
+
+function obraDoCadastro(id) {
+  const o = db.obras.find((x) => x.id === id && !x.interna)
+  if (!o) throw new Error('Obra não encontrada.')
+  return o
+}
+
+const obraIdsDe = (profileId) => db.membros.filter((m) => m.profile_id === profileId).map((m) => m.obra_id)
+
+// Nova obra (id = null) ou edição. Quem cria entra nela.
+export const salvarObra = (quem, id, valores) => responder(() => {
+  exigirEngenheiro(quem)
+  if (Object.keys(validar(CAMPOS_OBRA, valores)).length) throw new Error('Confira os campos marcados.')
+  if (codigoEmUso(db.obras, valores.codigo, id)) throw new Error('Já existe uma obra com este código. Escolha outro.')
+  const campos = Object.fromEntries(CAMPOS_OBRA.map((c) => [c.nome, String(valores[c.nome] ?? '').trim() || null]))
+  campos.codigo = campos.codigo.toUpperCase()
+  if (id) return Object.assign(obraDoCadastro(id), campos)
+  const o = { id: crypto.randomUUID(), ...campos, interna: false }
+  db.obras.push(o)
+  db.membros.push({ id: crypto.randomUUID(), obra_id: o.id, profile_id: quem.id })
+  return o
+})
+
+export const excluirObra = (quem, id) => responder(() => {
+  exigirEngenheiro(quem)
+  obraDoCadastro(id)
+  const { frentes, contratos, registros, fotos, materiais, lancamentos } = db
+  if (obraTemRegistros(id, { frentes, contratos, registros, fotos, materiais, lancamentos })) throw new Error(MSG_OBRA_COM_REGISTROS)
+  db.obras = db.obras.filter((o) => o.id !== id)
+  db.membros = db.membros.filter((m) => m.obra_id !== id)
+  return { id }
+})
+
+export const adicionarNaObra = (quem, obraId, profileId) => responder(() => {
+  exigirEngenheiro(quem)
+  obraDoCadastro(obraId)
+  const p = db.profiles.find((x) => x.id === profileId)
+  if (!p || !podeEntrarNaObra(p, obraIdsDe(profileId), obraId)) throw new Error('Esta pessoa não pode ser adicionada a esta obra.')
+  db.membros.push({ id: crypto.randomUUID(), obra_id: obraId, profile_id: profileId })
+  return { obraId, profileId }
+})
+
+export const removerDaObra = (quem, obraId, profileId) => responder(() => {
+  exigirEngenheiro(quem)
+  const p = db.profiles.find((x) => x.id === profileId)
+  if (!p) throw new Error('Pessoa não encontrada.')
+  const abertas = obrasDoSeletor(db.obras).map((o) => o.id)
+  const erro = erroAoRemover(p, obraIdsDe(profileId).filter((id) => abertas.includes(id)), obraId)
+  if (erro) throw new Error(erro)
+  db.membros = db.membros.filter((m) => !(m.obra_id === obraId && m.profile_id === profileId))
+  return { obraId, profileId }
+})
 
 // ---------- frentes ----------
 export const listarFrentes = () => responder(() => daObra(db.frentes, exigirObra()))

@@ -19,3 +19,16 @@ Uma linha por item aprovado na página de testes: data · o que mudou · o que p
 - 22/11/2026 · Meu perfil · Editar o próprio nome (vazio é recusado).
 - 22/11/2026 · Meu perfil · Continua logado ao reabrir; Sair desloga.
 - 22/11/2026 · Pessoas (correção da revisão) · Trocar para Engenheiro e voltar para Mestre não perde as obras.
+- 22/11/2026 · Obras · Cadastrar obra nova (acento e código em maiúsculas certos).
+- 22/11/2026 · Obras · Clique duplo em Cadastrar obra não cria obra repetida.
+- 22/11/2026 · Obras · Obra sem nome ou sem código é recusada.
+- 22/11/2026 · Obras · Código repetido é recusado.
+- 22/11/2026 · Seletor · Obra nova aparece no seletor, vazia, sem nada das outras.
+- 22/11/2026 · Obras · Editar cliente e data-meta de entrega.
+- 22/11/2026 · Seletor · Obra concluída sai do seletor e fica no Caixa geral.
+- 22/11/2026 · Obras · Adicionar o mestre numa obra: ele passa a vê-la no seletor.
+- 22/11/2026 · Obras · Tirar o mestre de uma obra, mas nunca da última.
+- 22/11/2026 · Obras · Excluir obra sem registros (com confirmação).
+- 22/11/2026 · Obras · Obra com registros não pode ser excluída.
+- 22/11/2026 · Seletor · O app volta na obra em que a pessoa estava.
+- 22/11/2026 · Obras · A tela funciona na largura de celular.
