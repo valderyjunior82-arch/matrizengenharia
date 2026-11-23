@@ -13,7 +13,7 @@ import { USAR_MOCK, hoje } from './config.js'
 import { daObra, obrasDoSeletor, obrasVisiveis } from './escopo.js'
 import { emailEmUso, normalizarEmail, obrasDoAcesso, papelDaNovaConta, podeGerenciar } from './pessoas.js'
 import { CAMPOS_CONTRATO, CAMPOS_CRIAR_CONTA, CAMPOS_FRENTE, CAMPOS_OBRA, paraNumero, validar } from './formularios.js'
-import { camposDaFrente, frenteTemRegistros, MSG_FRENTE_COM_REGISTROS, podeMarcarPronta } from './frentes.js'
+import { camposDaFrente, frenteTemRegistros, MSG_FRENTE_COM_REGISTROS, podeEditarFrente, podeMarcarPronta } from './frentes.js'
 import { codigoEmUso, erroAoRemover, MSG_OBRA_COM_REGISTROS, obraTemRegistros, podeEntrarNaObra } from './obras.js'
 import { ehEngenheiro, ehMestre } from './permissoes.js'
 import {
@@ -163,11 +163,10 @@ function frenteDaObra(id) {
 // Nova frente (id = null) ou edição. A obra é sempre a escolhida no topo.
 export const salvarFrente = (quem, id, valores) => responder(() => {
   exigirEngenheiro(quem, 'cadastra e edita frentes')
+  const anterior = id ? frenteDaObra(id) : null
+  if (anterior && !podeEditarFrente(anterior)) throw new Error('Esta frente aguarda aprovação. Aprove ou devolva antes de editar.')
   if (Object.keys(validar(CAMPOS_FRENTE, valores)).length) throw new Error('Confira os campos marcados.')
-  if (id) {
-    const f = frenteDaObra(id)
-    return Object.assign(f, camposDaFrente(valores, f, hoje()))
-  }
+  if (anterior) return Object.assign(anterior, camposDaFrente(valores, anterior, hoje()))
   const f = {
     id: crypto.randomUUID(), obra_id: exigirObra(), ultimo_avanco_em: null,
     marcada_pronta_por: null, marcada_pronta_em: null, comentario_devolucao: null,

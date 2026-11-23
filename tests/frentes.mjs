@@ -1,9 +1,10 @@
 // Regras das frentes, com os dados de exemplo do PRD ("hoje" = 23/11/2026).
 // Critério do PRD: frentes 2 e 7 vermelhas, 3 e 4 amarelas.
-import { camposDaFrente, diasSemAndar, frenteTemRegistros, frentesDoPainel, nivelFrente, podeMarcarPronta, reguaDaFrente, textoLimite } from '../src/lib/frentes.js'
+import { camposDaFrente, diasSemAndar, podeEditarFrente, frenteTemRegistros, frentesDoPainel, nivelFrente, podeMarcarPronta, reguaDaFrente, textoLimite } from '../src/lib/frentes.js'
 import { materiaisParaChegar } from '../src/lib/materiais.js'
 import { mockContratos, mockFotos, mockFrentes, mockLancamentos, mockMateriais, mockRegistros } from '../src/lib/mockData.js'
 import { CAMPOS_FRENTE, validar } from '../src/lib/formularios.js'
+import * as dados from '../src/lib/dados.js'
 
 let ok = 0
 let tot = 0
@@ -72,6 +73,10 @@ conferir('não mexer no % não conta como avanço',
   'ultimo_avanco_em' in camposDaFrente({ ...base, situacao: 'Em andamento', percentual: String(f('f3').percentual) }, f('f3'), HOJE), false)
 conferir('% com vírgula vira número', camposDaFrente({ ...base, percentual: '35,4' }, null, HOJE).percentual, 35)
 
+conferir('formulário não aceita Aguardando aprovação', Object.keys(validar(CAMPOS_FRENTE, { ...base, situacao: 'Aguardando aprovação' })), ['situacao'])
+conferir('frente aguardando aprovação não se edita', podeEditarFrente(f('f6')), false)
+conferir('frente em andamento se edita', podeEditarFrente(f('f3')), true)
+
 // Régua de prazo
 conferir('régua do porcelanato: hoje no meio, limite logo depois',
   reguaDaFrente(f('f3'), HOJE), { feito: 40, hoje: 52, limite: 60, passou: false })
@@ -85,6 +90,12 @@ conferir('sem datas previstas, sem régua', reguaDaFrente({ percentual: 10 }, HO
 const mats1 =mockMateriais.filter((m) => m.obra_id === 'o1')
 conferir('material para chegar: 7 dias, sem entregue, atrasado primeiro',
   materiaisParaChegar(mats1, HOJE).map((m) => m.id), ['mt3', 'mt1', 'mt2'])
+
+// Pela camada de dados: editar frente aguardando aprovação dá a frase clara, não "Confira os campos".
+dados.definirObraAtual('o1')
+const eng = { id: 'p1', role: 'Engenheiro', ativo: true }
+conferir('editar frente aguardando aprovação é recusado com o motivo',
+  (await dados.salvarFrente(eng, 'f6', { ...f('f6'), percentual: '100' })).erro, 'Esta frente aguarda aprovação. Aprove ou devolva antes de editar.')
 
 console.log(`${ok}/${tot} — frentes e materiais`)
 process.exit(ok === tot ? 0 : 1)

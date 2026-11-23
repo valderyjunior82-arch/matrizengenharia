@@ -72,6 +72,9 @@ export function textoLimite(f, hoje) {
   return { curto: `em ${x} dias`, longo: `Vence em ${x} dias` }
 }
 
+// Frente aguardando aprovação não se edita: o Engenheiro aprova ou devolve antes.
+export const podeEditarFrente = (f) => f.situacao !== 'Aguardando aprovação'
+
 export function podeMarcarPronta(f) {
   return !FORA_DO_PAINEL.includes(f.situacao)
 }

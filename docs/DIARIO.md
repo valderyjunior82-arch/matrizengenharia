@@ -48,3 +48,4 @@ Uma linha por item aprovado na página de testes: data · o que mudou · o que p
 - 23/11/2026 · Frentes · Mestre vê as frentes sem dinheiro e sem editar.
 - 23/11/2026 · Frentes · Mestre marca pronta e a frente vai para Para aprovar.
 - 23/11/2026 · Frentes · A tela funciona na largura de celular.
+- 23/11/2026 · Frentes · Só o botão Marcar como pronta leva para a aprovação (a opção saiu do formulário; frente aguardando não mostra Editar).

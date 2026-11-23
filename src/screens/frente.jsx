@@ -7,7 +7,7 @@ import {
   listarFrentes, listarMateriais, listarRegistros, marcarFrentePronta, obterFrente, salvarContrato, salvarFrente,
 } from '../lib/dados.js'
 import { useCarregar, juntar } from '../lib/usarDados.js'
-import { ambientesDe, diasSemAndar, nivelFrente, podeMarcarPronta, textoLimite } from '../lib/frentes.js'
+import { ambientesDe, diasSemAndar, nivelFrente, podeEditarFrente, podeMarcarPronta, textoLimite } from '../lib/frentes.js'
 import { pagoDoContrato } from '../lib/financeiro.js'
 import { CAMPOS_CONTRATO, CAMPOS_FRENTE } from '../lib/formularios.js'
 import { ehEngenheiro } from '../lib/permissoes.js'
@@ -145,7 +145,7 @@ export default function Frente({ goto, voltar: volta, params, profile }) {
           </>}
           {f.situacao === 'Aguardando aprovação' && !engenheiro && <div className="aviso" style={{ gridColumn: '1 / -1', padding: 0 }}>Pronta. Aguardando a aprovação do engenheiro.</div>}
           {podeMarcarPronta(f) && <button className="btn pri" style={{ gridColumn: '1 / -1' }} onClick={() => setFolha('pronta')}>Marcar como pronta</button>}
-          {engenheiro && <button className="btn sec" onClick={() => setFolha('editar')}>Editar</button>}
+          {engenheiro && podeEditarFrente(f) && <button className="btn sec" onClick={() => setFolha('editar')}>Editar</button>}
           {engenheiro && <button className="btn sec" onClick={() => setFolha('excluir')}>Excluir</button>}
         </div>
       </div>

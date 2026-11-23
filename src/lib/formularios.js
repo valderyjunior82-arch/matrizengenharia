@@ -25,7 +25,8 @@ export const CAMPOS_FRENTE = [
   { nome: 'servico', rotulo: 'Serviço', tipo: 'texto', obrigatorio: true, ajuda: 'Ex.: Forro de gesso' },
   { nome: 'ambiente', rotulo: 'Ambiente', tipo: 'texto', obrigatorio: true, sugestoesDe: 'ambientes', ajuda: 'Ex.: Sala, Cozinha, Banho suíte' },
   { nome: 'responsavel', rotulo: 'Responsável', tipo: 'texto', ajuda: 'Empresa ou pessoa' },
-  { nome: 'situacao', rotulo: 'Situação', tipo: 'lista', opcoes: SITUACOES_FRENTE, obrigatorio: true, padrao: 'Não iniciada' },
+  // Sem "Aguardando aprovação": só o botão Marcar como pronta leva para a aprovação (decisão de 23/11).
+  { nome: 'situacao', rotulo: 'Situação', tipo: 'lista', opcoes: SITUACOES_FRENTE.filter((s) => s !== 'Aguardando aprovação'), obrigatorio: true, padrao: 'Não iniciada' },
   { nome: 'data_inicio_prevista', rotulo: 'Início previsto', tipo: 'data' },
   { nome: 'data_termino_prevista', rotulo: 'Término previsto', tipo: 'data', naoAntesDe: 'data_inicio_prevista' },
   { nome: 'data_limite_decisao', rotulo: 'Data limite de decisão', tipo: 'data', ajuda: 'Se nada for decidido até esta data, a obra atrasa.' },
