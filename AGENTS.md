@@ -180,10 +180,10 @@ Resposta curta, em português simples, sem jargão:
 
 Esta seção é **substituída** no fim de cada conversa, não acumula. O que já passou nos testes fica em `docs/DIARIO.md`.
 
-**Pronto e no GitHub, com o banco de verdade (`USAR_MOCK = false`):**
+**Pronto e no GitHub (último commit de código `781d9af`), com o banco de verdade (`USAR_MOCK = false`):**
 - Login e pessoas, obras e seletor, frentes (rodadas 1 a 7), Diário e fotos (8 e 9) e, nesta conversa, **Materiais** (rodada 10): o Engenheiro cadastra a qualquer momento, edita, exclui, aprova e recusa; o Mestre **pede** material, e o pedido fica em "Aguardando aprovação" até o Engenheiro aprovar (decisão dele em 23/11: o Mestre pode adicionar, mas só vira compra com aprovação). Recusar apaga o pedido. A página de testes diz "Nada a testar agora": https://claude.ai/artifact/DUuJHnZp9uWE75DAtNVTc8
 - Banco: migrations `20261123-01` a `-07`. A 07 pôs "Aguardando aprovação" no CHECK de materiais, deixou o Mestre inserir só pedido e só em obra dele, e fez `marcar_material_entregue` recusar pedido não aprovado. `permissoes.sql` deu TUDO CERTO. Painel: só os 7 avisos conhecidos.
-- Regras de materiais em `src/lib/materiais.js` (botões por perfil, formulário → linha, pedido continua pedido ao editar), testadas em `tests/materiais.mjs`.
+- Regras de materiais em `src/lib/materiais.js` (botões por perfil, formulário → linha, pedido continua pedido ao editar), testadas em `tests/materiais.mjs`. Depois da rodada 10, a revisão de código trouxe dois ajustes pequenos: editar um pedido não mexe na situação ("Aguardando aprovação" saiu da lista do formulário) e o painel Hoje diz "N a comprar · N aguardando". Conferidos na versão de exemplo, **ainda não testados pelo engenheiro no banco**: se ele quiser, vira um item na página de testes.
 - Contas no banco: a do engenheiro (Engenheiro) e a "Mestre Teste" (dele, liberada só no Apto 501).
 - **Obras de exemplo ficam no banco por enquanto** (decisão do engenheiro em 23/11, para treinar). Antes do uso real, pergunte de novo; se ele mandar limpar, apague só os dados de exemplo (ids `md5('matriz-seed:...')`), nunca as contas nem o que ele cadastrou (ex.: a obra "Casa Teste" e o que ele criou nos testes de material no Apto 501).
 
