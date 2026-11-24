@@ -1,6 +1,6 @@
 // Materiais: o Mestre pede (só vira compra quando o Engenheiro aprova), o Engenheiro cadastra,
 // edita, exclui e aprova; material com nota não se exclui. Roda pela camada de dados do mock.
-import { acoesDoMaterial, camposDoFormulario, camposDoMaterial, resumoParaChegar, erroAoMudarSituacao, MSG_MATERIAL_COM_NOTA, MSG_PEDIDO_NAO_APROVADO, PEDIDO } from '../src/lib/materiais.js'
+import { acoesDoMaterial, camposDoFormulario, camposDoMaterial, materiaisParaChegar, resumoParaChegar, erroAoMudarSituacao, MSG_MATERIAL_COM_NOTA, MSG_PEDIDO_NAO_APROVADO, PEDIDO } from '../src/lib/materiais.js'
 import * as dados from '../src/lib/dadosMock.js'
 
 let ok = 0
@@ -29,6 +29,11 @@ conferir('a lista de situação do engenheiro não oferece Aguardando aprovaçã
 conferir('rodapé do painel conta o que espera aprovação',
   resumoParaChegar([{ situacao: 'A comprar' }, { situacao: PEDIDO }, { situacao: 'Comprado' }]), '1 a comprar · 1 aguardando')
 conferir('rodapé sem pedido não fala de aguardando', resumoParaChegar([{ situacao: 'A comprar' }]), '1 a comprar')
+conferir('painel: pedido para daqui a 30 dias aparece; compra para daqui a 30 dias não',
+  materiaisParaChegar([
+    { id: 'longe', situacao: PEDIDO, precisa_ate: '2026-12-31' },
+    { id: 'compra', situacao: 'A comprar', precisa_ate: '2026-12-31' },
+  ], '2026-12-01').map((m) => m.id), ['longe'])
 conferir('quantidade zero é recusada', camposDoMaterial(eng, { ...form, quantidade: '0' }).erro, 'Confira os campos marcados.')
 conferir('sem item é recusado', camposDoMaterial(mestre, { ...form, item: ' ' }).erro, 'Confira os campos marcados.')
 conferir('conta Aguardando não cadastra', camposDoMaterial(espera, form).erro, 'Sua conta não pode cadastrar material.')

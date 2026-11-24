@@ -63,9 +63,10 @@ export const materialTemNota = (id, lancamentos) => lancamentos.some((l) => l.ma
 const porData = (a, b) => (a.precisa_ate < b.precisa_ate ? -1 : a.precisa_ate > b.precisa_ate ? 1 : 0)
 
 // O que precisa estar na obra nos próximos N dias (ou já passou) e não chegou.
+// Pedido do Mestre entra sempre, seja qual for a data: é o único lugar em que o Engenheiro fica sabendo dele.
 export function materiaisParaChegar(materiais, hoje, janela = JANELA_MATERIAL_DIAS) {
   return materiais
-    .filter((m) => m.situacao !== 'Entregue' && diasEntre(hoje, m.precisa_ate) <= janela)
+    .filter((m) => m.situacao === PEDIDO || (m.situacao !== 'Entregue' && diasEntre(hoje, m.precisa_ate) <= janela))
     .sort(porData)
 }
 
