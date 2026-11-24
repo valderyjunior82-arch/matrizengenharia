@@ -5,7 +5,7 @@ import { hoje as hojeDe } from '../lib/config.js'
 import { aprovarFrente, devolverFrente, listarFrentes, listarLancamentos, listarMateriais, listarRegistros } from '../lib/dados.js'
 import { useCarregar, juntar } from '../lib/usarDados.js'
 import { avancoDaObra, frentesDoPainel, frentesParaAprovar, nivelFrente, prazoCorrido } from '../lib/frentes.js'
-import { materiaisParaChegar } from '../lib/materiais.js'
+import { materiaisParaChegar, resumoParaChegar } from '../lib/materiais.js'
 import { resumoObra } from '../lib/financeiro.js'
 import { brl, dataCurta, diaRelativo } from '../lib/formato.js'
 import { avisar, Cartao, Carregando, Chip, ErroCarga, Link, Stat, Vazio } from '../components/index.jsx'
@@ -50,7 +50,7 @@ export default function Hoje({ goto, profile }) {
         <Stat nivel="critico" rotulo="Atrasadas" numero={criticas.length} rodape={curto(criticas)} />
         <Stat nivel="atencao" rotulo="Atenção" numero={atencao.length} rodape={curto(atencao)} />
         <Stat nivel="info" rotulo="Para aprovar" numero={aprovar.length} rodape={curto(aprovar)} />
-        <Stat rotulo="Material 7 dias" numero={chegar.length} rodape={`${chegar.filter((m) => m.situacao === 'A comprar').length} a comprar`} onClick={() => goto('materiais')} />
+        <Stat rotulo="Material 7 dias" numero={chegar.length} rodape={resumoParaChegar(chegar)} onClick={() => goto('materiais')} />
       </div>
 
       <div className="cols">

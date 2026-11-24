@@ -45,10 +45,13 @@ export const CAMPOS_MATERIAL = [
   { nome: 'unidade', rotulo: 'Unidade', tipo: 'texto', obrigatorio: true, ajuda: 'm², sc, un, m, lata' },
   { nome: 'frente_id', rotulo: 'Frente', tipo: 'lista', opcoesDe: 'frentes' },
   { nome: 'precisa_ate', rotulo: 'Precisa estar na obra até', tipo: 'data', obrigatorio: true },
-  { nome: 'situacao', rotulo: 'Situação', tipo: 'lista', opcoes: SITUACOES_MATERIAL, obrigatorio: true, padrao: 'A comprar' },
+  { nome: 'situacao', rotulo: 'Situação', tipo: 'lista', opcoes: SITUACOES_MATERIAL.filter((s) => s !== 'Aguardando aprovação'), obrigatorio: true, padrao: 'A comprar' },
   { nome: 'fornecedor', rotulo: 'Fornecedor', tipo: 'texto' },
   { nome: 'observacao', rotulo: 'Observação', tipo: 'texto', inteiro: true },
 ]
+// 'Aguardando aprovação' fica fora da lista: só nasce do pedido do Mestre e só sai pelo Aprovar.
+// O pedido (e a edição de um pedido) não escolhe situação.
+export const CAMPOS_PEDIDO_MATERIAL = CAMPOS_MATERIAL.filter((c) => c.nome !== 'situacao')
 
 export const CAMPOS_PARCELA = [
   { nome: 'descricao', rotulo: 'Descrição', tipo: 'texto', obrigatorio: true, ajuda: 'Ex.: Entrada, Quinzena 3' },

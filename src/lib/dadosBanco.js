@@ -20,6 +20,7 @@ import { erroAoRemover, podeEntrarNaObra } from './obras.js'
 import { ehEngenheiro, ehMestre, podeEditarRegistro } from './permissoes.js'
 import { MSG_SEM_PERMISSAO, traduzirErro } from './errosBanco.js'
 import { caminhoFoto, camposDoRegistro } from './diario.js'
+import { camposDoMaterial, erroAoMudarSituacao } from './materiais.js'
 
 let obraAtualId = null
 export function definirObraAtual(id) {
@@ -325,10 +326,38 @@ export const excluirRegistro = (quem, id) => responder(async () => {
 // ---------- materiais ----------
 export const listarMateriais = () => responder(() => daObraAtual('materiais'))
 
-// "Entregue" passa pela função do banco (é o que o Mestre pode); o resto, só o Engenheiro.
-export const mudarSituacaoMaterial = (id, situacao) => responder(async () => {
-  const m = ok(await banco().from('materiais').select('id').eq('id', id).eq('obra_id', exigirObra()).maybeSingle())
+async function materialDaObra(id) {
+  const m = ok(await banco().from('materiais').select('*').eq('id', id).eq('obra_id', exigirObra()).maybeSingle())
   if (!m) throw new Error('Este material não é da obra escolhida.')
+  return m
+}
+
+// Novo (id = null) ou edição. Mestre só cria pedido (a RLS só deixa "Aguardando aprovação"); editar, só o Engenheiro.
+export const salvarMaterial = (quem, id, valores) => responder(async () => {
+  if (id) exigirEngenheiro(quem, 'edita materiais')
+  const atual = id ? await materialDaObra(id) : null
+  const { campos, erro } = camposDoMaterial(quem, valores, atual)
+  if (erro) throw new Error(erro)
+  if (id) {
+    return ok(await banco().from('materiais').update(campos).eq('id', id).eq('obra_id', exigirObra()).select().single())
+  }
+  return ok(await banco().from('materiais').insert({ obra_id: exigirObra(), ...campos }).select().single())
+})
+
+// Material com nota ligada: a chave estrangeira recusa (errosBanco traduz).
+export const excluirMaterial = (quem, id) => responder(async () => {
+  exigirEngenheiro(quem, 'exclui materiais')
+  await materialDaObra(id)
+  const apagados = ok(await banco().from('materiais').delete().eq('id', id).eq('obra_id', exigirObra()).select('id'))
+  if (!apagados.length) throw new Error(MSG_SEM_PERMISSAO)
+  return { id }
+})
+
+// "Entregue" passa pela função do banco (é o que o Mestre pode); o resto, só o Engenheiro.
+export const mudarSituacaoMaterial = (quem, id, situacao) => responder(async () => {
+  const m = await materialDaObra(id)
+  const erro = erroAoMudarSituacao(quem, m, situacao)
+  if (erro) throw new Error(erro)
   if (situacao === 'Entregue') ok(await banco().rpc('marcar_material_entregue', { p_material: id }))
   else {
     const mudou = ok(await banco().from('materiais').update({ situacao }).eq('id', id).eq('obra_id', exigirObra()).select('id'))

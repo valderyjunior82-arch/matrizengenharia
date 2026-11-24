@@ -72,3 +72,9 @@ Uma linha por item aprovado na página de testes: data · o que mudou · o que p
 - 23/11/2026 · Diário · Avanço sem frente não salva; tirar foto antes de salvar; sem internet avisa que não salvou.
 - 23/11/2026 · Diário · Excluir o registro apaga as fotos junto (banco e arquivos).
 - 23/11/2026 · Diário · Corrigir só o texto de um Avanço não mexe na frente (conserto da revisão, migration 06).
+- 24/11/2026 · Materiais · O Mestre pede material; o pedido fica em "Aguardando aprovação", sem botões para ele, e continua lá depois do F5.
+- 24/11/2026 · Materiais · Pedido com campo vazio ou quantidade 0 não sai; clique duplo não duplica.
+- 24/11/2026 · Materiais · O Engenheiro aprova (vai para A comprar) e recusa (sai da lista).
+- 24/11/2026 · Materiais · O Mestre marca entregue só o que foi aprovado.
+- 24/11/2026 · Materiais · O Engenheiro cadastra de qualquer aba, edita e exclui; material com nota não se exclui e a tela diz por quê.
+- 24/11/2026 · Materiais · Uma obra não mostra os materiais da outra; sem internet avisa que não salvou.

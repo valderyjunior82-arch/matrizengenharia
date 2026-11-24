@@ -88,8 +88,9 @@ conferir('concluída não avisa que passou', reguaDaFrente(f('f1'), HOJE).passou
 conferir('sem datas previstas, sem régua', reguaDaFrente({ percentual: 10 }, HOJE), null)
 
 const mats1 =mockMateriais.filter((m) => m.obra_id === 'o1')
+// O pedido do Mestre (mt5) também aparece: o Engenheiro precisa ver para aprovar.
 conferir('material para chegar: 7 dias, sem entregue, atrasado primeiro',
-  materiaisParaChegar(mats1, HOJE).map((m) => m.id), ['mt3', 'mt1', 'mt2'])
+  materiaisParaChegar(mats1, HOJE).map((m) => m.id), ['mt3', 'mt1', 'mt5', 'mt2'])
 
 // Pela camada de dados: editar frente aguardando aprovação dá a frase clara, não "Confira os campos".
 dados.definirObraAtual('o1')

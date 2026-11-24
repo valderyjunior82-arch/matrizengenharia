@@ -80,6 +80,27 @@ begin
   begin perform public.marcar_material_entregue(mat_b); exception when others then ok := true; end;
   if not ok then falhas := falhas || 'Mestre marca entregue material da obra B'; end if;
 
+  -- pedido de material (migration 07): o Mestre pede, só "Aguardando aprovação" e só na obra dele
+  begin insert into public.materiais (obra_id, item, quantidade, unidade, precisa_ate, situacao)
+    values (obra_a, 'Pedido A', 1, 'sc', current_date, 'Aguardando aprovação') returning id into mat_a;
+  exception when others then falhas := falhas || ('Mestre não pede material na A: ' || sqlerrm); end;
+  ok := false;
+  begin insert into public.materiais (obra_id, item, quantidade, unidade, precisa_ate, situacao)
+    values (obra_a, 'Compra direta', 1, 'sc', current_date, 'A comprar');
+  exception when others then ok := true; end;
+  if not ok then falhas := falhas || 'Mestre cria material já "A comprar" (sem aprovação)'; end if;
+  ok := false;
+  begin insert into public.materiais (obra_id, item, quantidade, unidade, precisa_ate, situacao)
+    values (obra_b, 'Pedido B', 1, 'sc', current_date, 'Aguardando aprovação');
+  exception when others then ok := true; end;
+  if not ok then falhas := falhas || 'Mestre pede material na obra B'; end if;
+  ok := false;
+  begin perform public.marcar_material_entregue(mat_a); exception when others then ok := true; end;
+  if not ok then falhas := falhas || 'Mestre marca entregue um pedido não aprovado'; end if;
+  delete from public.materiais where id = mat_a;
+  get diagnostics n = row_count;
+  if n <> 0 then falhas := falhas || 'Mestre apaga material'; end if;
+
   begin insert into public.registros_diario (obra_id, data, tipo, texto, autor_id) values (obra_a, public.hoje_obra(), 'Equipe', 'hoje', mestre);
   exception when others then falhas := falhas || ('Mestre não lança diário de hoje na A: ' || sqlerrm); end;
   ok := false;
@@ -191,6 +212,13 @@ begin
   ok := false;
   begin delete from public.frentes where id = frente_a; exception when others then ok := true; end;
   if not ok then falhas := falhas || 'Apagou frente com contrato'; end if;
+  -- aprovar o pedido do Mestre (mat_a) e excluir um pedido recusado
+  update public.materiais set situacao = 'A comprar' where id = mat_a and situacao = 'Aguardando aprovação';
+  get diagnostics n = row_count;
+  if n <> 1 then falhas := falhas || 'Engenheiro não aprova o pedido do Mestre'; end if;
+  delete from public.materiais where id = mat_a;
+  get diagnostics n = row_count;
+  if n <> 1 then falhas := falhas || 'Engenheiro não exclui material'; end if;
   -- "returning" é o que o app faz (grava e pede a linha de volta); sem ele o teste não pegou o bug da Rodada 7.
   begin insert into public.obras (nome, codigo) values ('Nova', 'NOVA-' || left(eng::text, 6)) returning id into obra_nova;
   exception when others then falhas := falhas || ('Engenheiro não cria obra: ' || sqlerrm); end;

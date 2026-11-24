@@ -59,7 +59,7 @@ export function LinhaFrente({ frente, hoje, onAbrir }) {
   )
 }
 
-const NIVEL_SITUACAO_MATERIAL = { 'A comprar': 'atencao', Comprado: 'info', Entregue: 'ok' }
+const NIVEL_SITUACAO_MATERIAL = { 'Aguardando aprovação': 'atencao', 'A comprar': 'atencao', Comprado: 'info', Entregue: 'ok' }
 
 export function LinhaMaterial({ material, hoje, frente, acoes }) {
   const urg = urgenciaMaterial(material, hoje)

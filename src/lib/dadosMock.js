@@ -12,6 +12,7 @@ import { camposDaFrente, frenteTemRegistros, MSG_FRENTE_COM_REGISTROS, podeEdita
 import { codigoEmUso, erroAoRemover, MSG_OBRA_COM_REGISTROS, obraTemRegistros, podeEntrarNaObra } from './obras.js'
 import { ehEngenheiro, ehMestre, podeEditarRegistro } from './permissoes.js'
 import { caminhoFoto, camposDoRegistro, frenteAposAvanco, mexeNaFrente } from './diario.js'
+import { camposDoMaterial, erroAoMudarSituacao, materialTemNota, MSG_MATERIAL_COM_NOTA } from './materiais.js'
 import {
   mockProfiles, mockSenhas, SENHA_DE_TESTE, mockObras, mockMembros, mockFrentes, mockContratos,
   mockRegistros, mockFotos, mockMateriais, mockLancamentos,
@@ -254,9 +255,35 @@ export const excluirRegistro = (quem, id) => responder(() => {
 // ---------- materiais ----------
 export const listarMateriais = () => responder(() => daObra(db.materiais, exigirObra()))
 
-export const mudarSituacaoMaterial = (id, situacao) => responder(() => {
+function materialDaObra(id) {
   const m = daObra(db.materiais, exigirObra()).find((x) => x.id === id)
   if (!m) throw new Error('Este material não é da obra escolhida.')
+  return m
+}
+
+export const salvarMaterial = (quem, id, valores) => responder(() => {
+  if (id) exigirEngenheiro(quem, 'edita materiais')
+  const atual = id ? materialDaObra(id) : null
+  const { campos, erro } = camposDoMaterial(quem, valores, atual)
+  if (erro) throw new Error(erro)
+  if (atual) return Object.assign(atual, campos)
+  const m = { id: crypto.randomUUID(), obra_id: exigirObra(), ...campos }
+  db.materiais.push(m)
+  return m
+})
+
+export const excluirMaterial = (quem, id) => responder(() => {
+  exigirEngenheiro(quem, 'exclui materiais')
+  materialDaObra(id)
+  if (materialTemNota(id, db.lancamentos)) throw new Error(MSG_MATERIAL_COM_NOTA)
+  db.materiais = db.materiais.filter((m) => m.id !== id)
+  return { id }
+})
+
+export const mudarSituacaoMaterial = (quem, id, situacao) => responder(() => {
+  const m = materialDaObra(id)
+  const erro = erroAoMudarSituacao(quem, m, situacao)
+  if (erro) throw new Error(erro)
   m.situacao = situacao
   return m
 })

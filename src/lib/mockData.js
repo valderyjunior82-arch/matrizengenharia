@@ -108,6 +108,7 @@ export const mockMateriais = [
   { id: 'mt2', obra_id: 'o1', frente_id: 'f3', item: 'Rodapé poliestireno 10 cm', quantidade: 42, unidade: 'm', precisa_ate: '2026-11-27', situacao: 'A comprar', fornecedor: null, observacao: null },
   { id: 'mt3', obra_id: 'o1', frente_id: 'f7', item: 'Tinta acrílica fosca branco', quantidade: 6, unidade: 'latas 18 L', precisa_ate: '2026-11-20', situacao: 'A comprar', fornecedor: null, observacao: null },
   { id: 'mt4', obra_id: 'o1', frente_id: 'f2', item: 'Perfil de gesso F530', quantidade: 60, unidade: 'un', precisa_ate: '2026-11-12', situacao: 'Entregue', fornecedor: 'Gesso Forte', observacao: null },
+  { id: 'mt5', obra_id: 'o1', frente_id: 'f7', item: 'Massa corrida PVA', quantidade: 4, unidade: 'latas 25 kg', precisa_ate: '2026-11-26', situacao: 'Aguardando aprovação', fornecedor: null, observacao: 'Pedido do mestre: acabou no quarto 2' },
 ]
 
 const lanc = (l) => ({

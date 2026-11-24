@@ -2,6 +2,7 @@
 // Puro (sem rede): o teste em tests/erros-banco.mjs confere cada caso.
 import { MSG_FRENTE_COM_REGISTROS } from './frentes.js'
 import { MSG_OBRA_COM_REGISTROS } from './obras.js'
+import { MSG_MATERIAL_COM_NOTA } from './materiais.js'
 
 export const MSG_SEM_REDE = 'Sem conexão com a internet. Nada foi salvo: confira a rede e tente de novo.'
 export const MSG_SEM_PERMISSAO = 'Sua conta não tem permissão para isso.'
@@ -15,7 +16,7 @@ const UNICOS = {
 }
 
 // Chave estrangeira impedindo apagar (23503) → depende de quem estava sendo apagado.
-const APAGAR = { obras: MSG_OBRA_COM_REGISTROS, frentes: MSG_FRENTE_COM_REGISTROS }
+const APAGAR = { obras: MSG_OBRA_COM_REGISTROS, frentes: MSG_FRENTE_COM_REGISTROS, materiais: MSG_MATERIAL_COM_NOTA }
 
 export function traduzirErro(e) {
   if (!e) return null
@@ -27,7 +28,8 @@ export function traduzirErro(e) {
     case 'P0001': return texto // frase em português escrita nas funções do banco
     case '23505': return UNICOS[Object.keys(UNICOS).find((k) => texto.includes(k))] ?? 'Já existe um cadastro igual a este.'
     case '23503': {
-      const tabela = Object.keys(APAGAR).find((t) => texto.includes(`on table "${t}"`))
+      // A frase cita duas tabelas ("delete on table X ... on table Y"): quem estava sendo apagado é a X.
+      const tabela = Object.keys(APAGAR).find((t) => texto.includes(`delete on table "${t}"`))
       return APAGAR[tabela] ?? 'Este cadastro está ligado a outro registro.'
     }
     case '23514': return 'Algum campo tem um valor que o sistema não aceita. Confira e tente de novo.'

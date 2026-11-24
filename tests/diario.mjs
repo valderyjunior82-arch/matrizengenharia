@@ -1,9 +1,12 @@
 // Diário e fotos: fotos separadas por data, quem lança e edita, e a frente que anda.
-// "Hoje" no mock = 23/11/2026.
+// "Hoje": nas regras puras, datas fixas; pela camada de dados, o hoje() do app.
 import { caminhoFoto, camposDoRegistro, fotosPorDia, frenteAposAvanco, frentesParaAvanco, mexeNaFrente, rotuloFoto } from '../src/lib/diario.js'
 import { mockFotos, mockFrentes, mockProfiles } from '../src/lib/mockData.js'
 import * as dados from '../src/lib/dadosMock.js'
+import { hoje } from '../src/lib/config.js'
 
+// O mock grava com o hoje() do app (data parada só com USAR_MOCK; senão, a de verdade).
+const HOJE = hoje()
 let ok = 0
 let tot = 0
 function conferir(descricao, real, esperado) {
@@ -54,10 +57,10 @@ conferir('na edição, a frente do próprio registro aparece mesmo concluída',
 dados.definirObraAtual('o2')
 const novo = await dados.salvarRegistro(mestre, null, 'Avanço',
   { frente_id: 'f9', texto: 'Ramal da cozinha', percentual_novo: '60' }, [{ previa: 'blob:a' }, { previa: 'blob:b' }])
-conferir('Mestre lança na obra dele, com a data de hoje', [novo.erro, novo.data?.data, novo.data?.autor_id], [null, '2026-11-23', 'p2'])
+conferir('Mestre lança na obra dele, com a data de hoje', [novo.erro, novo.data?.data, novo.data?.autor_id], [null, HOJE, 'p2'])
 const fotos2 = (await dados.listarFotos()).data.filter((f) => f.registro_id === novo.data.id)
 conferir('as 2 fotos entram com a data e o ambiente do registro',
-  fotos2.map((f) => [f.data, f.ambiente, f.caminho.startsWith('o2/2026-11-23/')]), [['2026-11-23', 'Banho social', true], ['2026-11-23', 'Banho social', true]])
+  fotos2.map((f) => [f.data, f.ambiente, f.caminho.startsWith(`o2/${HOJE}/`)]), [[HOJE, 'Banho social', true], [HOJE, 'Banho social', true]])
 conferir('a frente recebe o novo %', (await dados.obterFrente('f9')).data.percentual, 60)
 
 const editado = await dados.salvarRegistro(mestre, novo.data.id, null, { texto: 'Ramal da cozinha e lavanderia', percentual_novo: '65' })
