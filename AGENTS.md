@@ -195,7 +195,7 @@ Esta seção é **substituída** no fim de cada conversa, não acumula. O que j�
 **No GitHub** depois da revisão de código (que gerou a migration `-04-nomes-e-diario.sql`: o Mestre só vê o NOME dos colegas, e diário com data antiga não derruba o %).
 
 **Falta, nesta ordem sugerida:**
-1. Decidir com ele: manter as obras de exemplo ou limpar o banco para o uso real (etapa 8 da skill). Se limpar, apagar só os dados de exemplo (ids `md5('matriz-seed:...')`) e só com o ok dele.
+1. **Obras de exemplo ficam no banco por enquanto** (decisão do engenheiro em 23/11, para treinar). Antes do uso real, pergunte de novo; se ele mandar limpar, apague só os dados de exemplo (ids `md5('matriz-seed:...')`), nunca a conta dele nem o que ele cadastrou.
 2. Storage das fotos (buckets `fotos-obra` e `comprovantes`, privados) e os formulários de diário, material, nota e parcela, que ainda só mostram o aviso.
 3. Vercel (etapa 9): variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`.
 
