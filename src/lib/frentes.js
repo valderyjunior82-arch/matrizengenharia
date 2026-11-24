@@ -118,6 +118,8 @@ export function prazoCorrido(obra, hoje) {
 export const frenteTemRegistros = (frenteId, tabelas) =>
   Object.values(tabelas).some((linhas) => linhas.some((l) => l.frente_id === frenteId))
 
+// A chave dupla (frente_id, obra_id) recusa: a frente é de outra obra.
+export const MSG_FRENTE_DE_OUTRA_OBRA = 'A frente escolhida não é desta obra.'
 export const MSG_FRENTE_COM_REGISTROS = 'Esta frente já tem registros (diário, fotos, materiais ou contrato). Mude a situação em vez de excluir.'
 
 // Do formulário para o que se grava. `anterior` = a frente antes da edição (ou null).

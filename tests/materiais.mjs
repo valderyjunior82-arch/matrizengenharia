@@ -2,6 +2,7 @@
 // edita, exclui e aprova; material com nota não se exclui. Roda pela camada de dados do mock.
 import { acoesDoMaterial, camposDoFormulario, camposDoMaterial, materiaisParaChegar, resumoParaChegar, erroAoMudarSituacao, MSG_MATERIAL_COM_NOTA, MSG_PEDIDO_NAO_APROVADO, PEDIDO } from '../src/lib/materiais.js'
 import * as dados from '../src/lib/dadosMock.js'
+import { MSG_FRENTE_DE_OUTRA_OBRA } from '../src/lib/frentes.js'
 
 let ok = 0
 let tot = 0
@@ -61,6 +62,8 @@ conferir('engenheiro exclui', (await dados.excluirMaterial(eng, pedido.data.id))
 conferir('obra 2 volta a ficar sem material', (await dados.listarMateriais()).data.length, 0)
 
 // 4. Multi-obra: material da obra 1 não se mexe com a obra 2 escolhida; nota impede excluir.
+conferir('frente de outra obra é recusada (como a chave dupla do banco)',
+  (await dados.salvarMaterial(eng, null, { ...form, frente_id: 'f3' })).erro, MSG_FRENTE_DE_OUTRA_OBRA)
 conferir('não edita material de outra obra', (await dados.salvarMaterial(eng, 'mt1', form)).erro, 'Este material não é da obra escolhida.')
 dados.definirObraAtual('o1')
 conferir('material com nota não se exclui', (await dados.excluirMaterial(eng, 'mt1')).erro, MSG_MATERIAL_COM_NOTA)

@@ -8,7 +8,7 @@ import { hoje } from './config.js'
 import { daObra, obrasDoSeletor, obrasVisiveis } from './escopo.js'
 import { emailEmUso, normalizarEmail, obrasDoAcesso, papelDaNovaConta, podeGerenciar } from './pessoas.js'
 import { CAMPOS_CONTRATO, CAMPOS_CRIAR_CONTA, CAMPOS_FRENTE, CAMPOS_OBRA, paraNumero, validar } from './formularios.js'
-import { camposDaFrente, frenteTemRegistros, MSG_FRENTE_COM_REGISTROS, podeEditarFrente, podeMarcarPronta } from './frentes.js'
+import { camposDaFrente, frenteTemRegistros, MSG_FRENTE_COM_REGISTROS, MSG_FRENTE_DE_OUTRA_OBRA, podeEditarFrente, podeMarcarPronta } from './frentes.js'
 import { codigoEmUso, erroAoRemover, MSG_OBRA_COM_REGISTROS, obraTemRegistros, podeEntrarNaObra } from './obras.js'
 import { ehEngenheiro, ehMestre, podeEditarRegistro } from './permissoes.js'
 import { caminhoFoto, camposDoRegistro, frenteAposAvanco, mexeNaFrente } from './diario.js'
@@ -266,6 +266,8 @@ export const salvarMaterial = (quem, id, valores) => responder(() => {
   const atual = id ? materialDaObra(id) : null
   const { campos, erro } = camposDoMaterial(quem, valores, atual)
   if (erro) throw new Error(erro)
+  // Espelho da chave dupla do banco (frente_id, obra_id).
+  if (campos.frente_id && !daObra(db.frentes, exigirObra()).some((f) => f.id === campos.frente_id)) throw new Error(MSG_FRENTE_DE_OUTRA_OBRA)
   if (atual) return Object.assign(atual, campos)
   const m = { id: crypto.randomUUID(), obra_id: exigirObra(), ...campos }
   db.materiais.push(m)

@@ -219,6 +219,19 @@ begin
   delete from public.materiais where id = mat_a;
   get diagnostics n = row_count;
   if n <> 1 then falhas := falhas || 'Engenheiro não exclui material'; end if;
+  -- cadastrar material direto (migration 08: o insert do Engenheiro também passa por obras_visiveis)
+  begin insert into public.materiais (obra_id, item, quantidade, unidade, precisa_ate, situacao)
+    values (obra_b, 'Compra B', 1, 'sc', current_date, 'A comprar');
+  exception when others then falhas := falhas || ('Engenheiro não cadastra material: ' || sqlerrm); end;
+  -- frente de outra obra: a chave dupla recusa, com a frase que errosBanco.js traduz
+  ok := false;
+  begin insert into public.materiais (obra_id, frente_id, item, quantidade, unidade, precisa_ate, situacao)
+    values (obra_a, frente_b, 'Cruzado', 1, 'sc', current_date, 'A comprar');
+  exception when others then
+    ok := sqlerrm like 'insert or update on table "materiais"%' and sqlerrm like '%_frente_id_obra_id_fkey%';
+    if not ok then falhas := falhas || ('Frase da frente de outra obra mudou: ' || sqlerrm); ok := true; end if;
+  end;
+  if not ok then falhas := falhas || 'Material da obra A aceita frente da obra B'; end if;
   -- "returning" é o que o app faz (grava e pede a linha de volta); sem ele o teste não pegou o bug da Rodada 7.
   begin insert into public.obras (nome, codigo) values ('Nova', 'NOVA-' || left(eng::text, 6)) returning id into obra_nova;
   exception when others then falhas := falhas || ('Engenheiro não cria obra: ' || sqlerrm); end;

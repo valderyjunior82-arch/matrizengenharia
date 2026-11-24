@@ -8,8 +8,9 @@ export const PAPEIS_DE_ACESSO = ['Engenheiro', 'Mestre']
 export const SITUACOES_OBRA = ['Em andamento', 'Parada', 'Concluída']
 export const SITUACOES_FRENTE = ['Não iniciada', 'Em andamento', 'Parada', 'Aguardando aprovação', 'Concluída']
 export const TIPOS_REGISTRO = ['Avanço', 'Equipe', 'Ocorrência']
-// 'Aguardando aprovação' = pedido do Mestre; só vira compra quando o Engenheiro aprova (23/11/2026).
-export const SITUACOES_MATERIAL = ['Aguardando aprovação', 'A comprar', 'Comprado', 'Entregue']
+// Pedido do Mestre: só vira compra ('A comprar') quando o Engenheiro aprova (23/11/2026).
+export const PEDIDO = 'Aguardando aprovação'
+export const SITUACOES_MATERIAL = [PEDIDO, 'A comprar', 'Comprado', 'Entregue']
 export const TIPOS_LANCAMENTO = ['Entrada', 'Saída']
 export const CATEGORIAS = ['Mão de obra', 'Material', 'Serviço terceirizado', 'Taxa', 'Recebimento do cliente', 'Outros']
 export const SITUACOES_LANCAMENTO = ['Previsto', 'Realizado']

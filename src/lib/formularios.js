@@ -7,7 +7,7 @@
 // visivel(valores): o campo só aparece (e só é cobrado) quando devolve true.
 // opcoesDe: nome da lista que a tela injeta (ex.: as frentes da obra atual).
 import {
-  SITUACOES_OBRA, SITUACOES_FRENTE, SITUACOES_MATERIAL, TIPOS_LANCAMENTO,
+  SITUACOES_OBRA, SITUACOES_FRENTE, SITUACOES_MATERIAL, PEDIDO, TIPOS_LANCAMENTO,
   CATEGORIAS, PAGO_POR, FORMAS_PAGAMENTO,
 } from './vocabulario.js'
 
@@ -45,11 +45,11 @@ export const CAMPOS_MATERIAL = [
   { nome: 'unidade', rotulo: 'Unidade', tipo: 'texto', obrigatorio: true, ajuda: 'm², sc, un, m, lata' },
   { nome: 'frente_id', rotulo: 'Frente', tipo: 'lista', opcoesDe: 'frentes' },
   { nome: 'precisa_ate', rotulo: 'Precisa estar na obra até', tipo: 'data', obrigatorio: true },
-  { nome: 'situacao', rotulo: 'Situação', tipo: 'lista', opcoes: SITUACOES_MATERIAL.filter((s) => s !== 'Aguardando aprovação'), obrigatorio: true, padrao: 'A comprar' },
+  { nome: 'situacao', rotulo: 'Situação', tipo: 'lista', opcoes: SITUACOES_MATERIAL.filter((s) => s !== PEDIDO), obrigatorio: true, padrao: 'A comprar' },
   { nome: 'fornecedor', rotulo: 'Fornecedor', tipo: 'texto' },
   { nome: 'observacao', rotulo: 'Observação', tipo: 'texto', inteiro: true },
 ]
-// 'Aguardando aprovação' fica fora da lista: só nasce do pedido do Mestre e só sai pelo Aprovar.
+// PEDIDO fica fora da lista: só nasce do pedido do Mestre e só sai pelo Aprovar.
 // O pedido (e a edição de um pedido) não escolhe situação.
 export const CAMPOS_PEDIDO_MATERIAL = CAMPOS_MATERIAL.filter((c) => c.nome !== 'situacao')
 

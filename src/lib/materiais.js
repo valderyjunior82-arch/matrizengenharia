@@ -1,9 +1,9 @@
 import { diasEntre } from './datas.js'
-import { JANELA_MATERIAL_DIAS } from './vocabulario.js'
+import { JANELA_MATERIAL_DIAS, PEDIDO } from './vocabulario.js'
 import { CAMPOS_MATERIAL, CAMPOS_PEDIDO_MATERIAL, paraNumero, validar } from './formularios.js'
 import { ehEngenheiro, ehMestre } from './permissoes.js'
 
-export const PEDIDO = 'Aguardando aprovação'
+export { PEDIDO }
 export const MSG_MATERIAL_COM_NOTA = 'Este material tem nota lançada no Financeiro. Exclua a nota antes de excluir o material.'
 export const MSG_PEDIDO_NAO_APROVADO = 'Este pedido ainda não foi aprovado pelo Engenheiro.'
 

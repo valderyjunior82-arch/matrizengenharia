@@ -1,7 +1,7 @@
 // Tradução dos erros do Supabase para a frase da tela (src/lib/errosBanco.js).
 import { MSG_GENERICA, MSG_SEM_PERMISSAO, MSG_SEM_REDE, traduzirErro } from '../src/lib/errosBanco.js'
 import { MSG_MATERIAL_COM_NOTA } from '../src/lib/materiais.js'
-import { MSG_FRENTE_COM_REGISTROS } from '../src/lib/frentes.js'
+import { MSG_FRENTE_COM_REGISTROS, MSG_FRENTE_DE_OUTRA_OBRA } from '../src/lib/frentes.js'
 import { MSG_OBRA_COM_REGISTROS } from '../src/lib/obras.js'
 
 let ok = 0
@@ -33,6 +33,9 @@ conferir('apagar material com nota (a frase cita materiais e lancamentos)',
 conferir('apagar frente com material continua sendo frase de frente',
   traduzirErro({ code: '23503', message: 'update or delete on table "frentes" violates foreign key constraint "materiais_frente_id_obra_id_fkey" on table "materiais"' }),
   MSG_FRENTE_COM_REGISTROS)
+conferir('gravar material com frente de outra obra',
+  traduzirErro({ code: '23503', message: 'insert or update on table "materiais" violates foreign key constraint "materiais_frente_id_obra_id_fkey"' }),
+  MSG_FRENTE_DE_OUTRA_OBRA)
 conferir('RLS recusou', traduzirErro({ code: '42501', message: 'new row violates row-level security policy for table "obras"' }), MSG_SEM_PERMISSAO)
 conferir('Storage recusou (sem code, frase em inglês)',
   traduzirErro({ statusCode: '403', message: 'new row violates row-level security policy' }), MSG_SEM_PERMISSAO)

@@ -2,7 +2,7 @@
 // ordem e texto é a lib (frentes.js, materiais.js).
 import { useState } from 'react'
 import { diasSemAndar, nivelFrente, reguaDaFrente, textoLimite } from '../lib/frentes.js'
-import { textoPrazoMaterial, urgenciaMaterial } from '../lib/materiais.js'
+import { PEDIDO, textoPrazoMaterial, urgenciaMaterial } from '../lib/materiais.js'
 import { dataCurta } from '../lib/formato.js'
 import { Chip, Folha } from './index.jsx'
 
@@ -59,7 +59,7 @@ export function LinhaFrente({ frente, hoje, onAbrir }) {
   )
 }
 
-const NIVEL_SITUACAO_MATERIAL = { 'Aguardando aprovação': 'atencao', 'A comprar': 'atencao', Comprado: 'info', Entregue: 'ok' }
+const NIVEL_SITUACAO_MATERIAL = { [PEDIDO]: 'atencao', 'A comprar': 'atencao', Comprado: 'info', Entregue: 'ok' }
 
 export function LinhaMaterial({ material, hoje, frente, acoes }) {
   const urg = urgenciaMaterial(material, hoje)

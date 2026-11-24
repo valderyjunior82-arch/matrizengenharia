@@ -1,6 +1,6 @@
 // Traduz o erro do Supabase para a frase que a tela mostra.
 // Puro (sem rede): o teste em tests/erros-banco.mjs confere cada caso.
-import { MSG_FRENTE_COM_REGISTROS } from './frentes.js'
+import { MSG_FRENTE_COM_REGISTROS, MSG_FRENTE_DE_OUTRA_OBRA } from './frentes.js'
 import { MSG_OBRA_COM_REGISTROS } from './obras.js'
 import { MSG_MATERIAL_COM_NOTA } from './materiais.js'
 
@@ -28,6 +28,8 @@ export function traduzirErro(e) {
     case 'P0001': return texto // frase em português escrita nas funções do banco
     case '23505': return UNICOS[Object.keys(UNICOS).find((k) => texto.includes(k))] ?? 'Já existe um cadastro igual a este.'
     case '23503': {
+      // Gravando ("insert or update") com a frente de outra obra: a chave dupla recusa.
+      if (texto.includes('insert or update on table') && texto.includes('_frente_id_obra_id_fkey')) return MSG_FRENTE_DE_OUTRA_OBRA
       // A frase cita duas tabelas ("delete on table X ... on table Y"): quem estava sendo apagado é a X.
       const tabela = Object.keys(APAGAR).find((t) => texto.includes(`delete on table "${t}"`))
       return APAGAR[tabela] ?? 'Este cadastro está ligado a outro registro.'
