@@ -179,31 +179,22 @@ Resposta curta, em português simples, sem jargão:
 
 Esta seção é **substituída** no fim de cada conversa, não acumula. O que já passou nos testes fica em `docs/DIARIO.md`.
 
-**No GitHub:** login e pessoas, obras e seletor, frentes de serviço (com os consertos das revisões e as decisões de 23/11: sair de Concluída mantém o % digitado; só o botão Marcar como pronta leva para a aprovação). Tudo aprovado nas rodadas 1 a 6, ainda com dados de exemplo.
+**Pronto e no GitHub (último commit `1fd6bb9`), com o banco de verdade (`USAR_MOCK = false`):**
+- Login e pessoas, obras e seletor, frentes de serviço: tudo grava no Supabase. Rodadas 1 a 7 aprovadas; a página de testes diz "Nada a testar agora": https://claude.ai/artifact/DUuJHnZp9uWE75DAtNVTc8
+- Nesta conversa: Frentes (Nova, Editar, Contrato, Excluir só sem registros), as decisões de 23/11 (sair de Concluída mantém o % digitado; só o botão Marcar como pronta leva para a aprovação) e a etapa do banco inteira: migrations `supabase/migrations/20261123-01` a `-04`, teste de permissões (`supabase/tests/permissoes.sql`, TUDO CERTO), carga de exemplo, login de verdade, erros em português.
+- Consertos que vieram de teste e revisão: obra nova visível no `insert ... returning` (migration 03); o Mestre só vê o NOME dos colegas, via `nomes_visiveis()` (04); diário com data antiga não derruba o % (04).
+- Contas no banco: a do engenheiro (Engenheiro) e a "Mestre Teste" (dele, liberada só no Apto 501).
+- **Obras de exemplo ficam no banco por enquanto** (decisão do engenheiro em 23/11, para treinar). Antes do uso real, pergunte de novo; se ele mandar limpar, apague só os dados de exemplo (ids `md5('matriz-seed:...')`), nunca as contas nem o que ele cadastrou (ex.: a obra "Casa Teste").
 
-**Etapa do banco (23/11):** o app grava no Supabase (`USAR_MOCK = false`). Feito:
-- Migrations `supabase/migrations/20261123-01-esquema.sql` e `-02-service-role.sql`: todas as tabelas do PRD-BACKEND, RLS, GRANT, gatilhos (primeira conta vira Engenheiro, quem cria a obra entra nela, Avanço do diário atualiza a frente, trava do papel) e as funções do Mestre.
-- O teste de permissões (`supabase/tests/permissoes.sql`) deu TUDO CERTO.
-- O engenheiro criou a conta dele pelo app e entrou como Engenheiro (a regra "primeira conta" passou de verdade).
-- A carga de exemplo (`supabase/seed-exemplo.sql`, gerada por `node supabase/gerar-seed.mjs`) está no banco: Apto 1802 e Apto 501, com o engenheiro como autor de tudo (não havia Mestre).
-- O agente **não conseguiu ver a tela logada**: a sessão do engenheiro é no navegador dele, e o agente não entra com a senha dele. Conferiu pelo banco, simulando a conta dele.
-- **Rodada 7 aprovada (14 itens).** "Nova obra" falhava (a política de leitura de `obras` não enxergava a obra recém-criada no `insert ... returning`); corrigido na migration `-03-obra-nova-visivel.sql`, e o teste de permissões passou a gravar com `returning`, como o app faz. A página diz "Nada a testar agora".
-- Existe uma conta de teste "Mestre Teste" (do engenheiro), liberada só no Apto 501.
-- O dev server sobe em **http://localhost:5173**, e o login fica guardado por endereço: se a porta mudar, ele precisa entrar de novo.
-- Aviso novo no painel: "Leaked Password Protection Disabled" (a checagem de senha vazada é recurso do plano pago do Supabase). Ainda não foi explicado ao engenheiro.
+**Como ligar o app nesta máquina:** `preview_start` com o nome `matriz-obra` (http://localhost:5173). O app só abre enquanto a conversa o mantém ligado; o login fica guardado por endereço, então se a porta mudar ele entra de novo. O agente não consegue ver a tela logada: não entra com a senha dele; confere pelo banco, simulando a conta dele (`set_config('request.jwt.claims', ...)` numa transação desfeita).
 
-**No GitHub** depois da revisão de código (que gerou a migration `-04-nomes-e-diario.sql`: o Mestre só vê o NOME dos colegas, e diário com data antiga não derruba o %).
+**Próximo passo (recomendado pelo agente, o engenheiro ainda não escolheu):** pôr no ar na **Vercel** (etapa 9 da skill), para o Mestre abrir no celular. Variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` (os valores estão no `.env.local`, que não vai para o Git). Depois: em Authentication → URL Configuration do Supabase, o Site URL vira o endereço da Vercel. Pergunte no começo da conversa nova. Alternativa: fotos e formulários (item 1 abaixo).
 
-**Falta, nesta ordem sugerida:**
-1. **Obras de exemplo ficam no banco por enquanto** (decisão do engenheiro em 23/11, para treinar). Antes do uso real, pergunte de novo; se ele mandar limpar, apague só os dados de exemplo (ids `md5('matriz-seed:...')`), nunca a conta dele nem o que ele cadastrou.
-2. Storage das fotos (buckets `fotos-obra` e `comprovantes`, privados) e os formulários de diário, material, nota e parcela, que ainda só mostram o aviso.
-3. Vercel (etapa 9): variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`.
-
-**Pela metade** (pontos menores, o engenheiro ainda não decidiu):
-1. `src/screens/pessoas.jsx` decide Liberar × Editar com `role === 'Aguardando'` escrito à mão; pela regra, vai para `lib/pessoas.js`.
-2. O link "Criar conta / Entrar" do login usa `.link`, que é mono em caixa-alta; a convenção visual não permite.
-3. O cadastro de obra aceita data-meta de entrega anterior à data de início (o `naoAntesDe` resolve em uma linha).
-4. `src/screens/frente.jsx` decide Aprovar/Devolver com `f.situacao === 'Aguardando aprovação'` escrito à mão.
+**Pela metade / ainda não feito:**
+1. Envio de fotos (Storage: buckets `fotos-obra` e `comprovantes`, privados) e os formulários de diário, material, nota e parcela, que ainda só mostram o aviso. As fotos de exemplo no banco têm `caminho` vazio (não há arquivo).
+2. Sem internet ao abrir, o app mostra o login em vez de um aviso (a sessão não se perde). Fica para quando o uso offline do canteiro for tratado.
+3. Aviso do painel "Leaked Password Protection Disabled": recurso do plano pago do Supabase; já explicado ao engenheiro, nada a fazer agora.
+4. Pontos menores sem decisão: `src/screens/pessoas.jsx` decide Liberar × Editar com `role === 'Aguardando'` à mão (vai para `lib/pessoas.js`); `src/screens/frente.jsx` decide Aprovar/Devolver com `f.situacao === 'Aguardando aprovação'` à mão; o link "Criar conta / Entrar" usa `.link` (mono caixa-alta, a convenção não permite); o cadastro de obra aceita data-meta antes do início (`naoAntesDe` resolve em uma linha).
 
 ## O que entra neste arquivo
 
