@@ -71,3 +71,4 @@ Uma linha por item aprovado na página de testes: data · o que mudou · o que p
 - 23/11/2026 · Diário · Uma obra não mostra as fotos da outra.
 - 23/11/2026 · Diário · Avanço sem frente não salva; tirar foto antes de salvar; sem internet avisa que não salvou.
 - 23/11/2026 · Diário · Excluir o registro apaga as fotos junto (banco e arquivos).
+- 23/11/2026 · Diário · Corrigir só o texto de um Avanço não mexe na frente (conserto da revisão, migration 06).
