@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { camposVisiveis, validar, valoresIniciais } from '../lib/formularios.js'
+import { dataCompleta } from '../lib/formato.js'
 
 // ---------- ícones (SVG desenhado à mão; nada de emoji) ----------
 const TRACOS = {
@@ -124,16 +125,35 @@ export function ErroCarga({ mensagem, onTentar }) {
   )
 }
 
-// ---------- fotos (marcador de lugar até o Storage existir) ----------
+// ---------- fotos: grade e foto grande ----------
+// Foto sem arquivo (url null, as de exemplo) aparece como o quadro listrado.
 export function GradeFotos({ fotos, rotulo }) {
+  const [aberta, setAberta] = useState(null)
+  const f = aberta !== null ? fotos[aberta] : null
   return (
     <div className="photos">
-      {fotos.map((f, i) => (
-        <button key={f.id} className={`ph t${(i % 3) + 1}`} aria-label={`Foto: ${rotulo(f)}`}
-          onClick={() => avisar(`${rotulo(f)} · tirada por ${f.autor_nome}. A foto de verdade aparece quando o Storage for ligado.`)}>
-          <span>{rotulo(f)}</span>
+      {fotos.map((x, i) => (
+        <button key={x.id} className={`ph t${(i % 3) + 1}`} aria-label={`Foto: ${rotulo(x)}`} onClick={() => setAberta(i)}>
+          {x.url && <img src={x.url} alt="" loading="lazy" />}
+          <span>{rotulo(x)}</span>
         </button>
       ))}
+      {f && (
+        <Folha titulo={`Foto ${aberta + 1} de ${fotos.length}`} onFechar={() => setAberta(null)}>
+          <div style={{ padding: '0 16px' }}>
+            {f.url ? <img className="foto-grande" src={f.url} alt={rotulo(f)} />
+              : <div className="ph grande"><span>Foto de exemplo, sem arquivo</span></div>}
+            <p style={{ margin: '12px 0 4px', fontWeight: 600 }}>{dataCompleta(f.data)} · {rotulo(f)}</p>
+            <p className="m" style={{ margin: 0 }}>Tirada por {f.autor_nome}</p>
+            {fotos.length > 1 && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, margin: '12px 0' }}>
+                <button className="btn sec" disabled={aberta === 0} onClick={() => setAberta(aberta - 1)}><Icon nome="voltar" />Anterior</button>
+                <button className="btn sec" disabled={aberta === fotos.length - 1} onClick={() => setAberta(aberta + 1)}>Próxima<Icon nome="chev" /></button>
+              </div>
+            )}
+          </div>
+        </Folha>
+      )}
     </div>
   )
 }

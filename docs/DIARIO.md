@@ -63,3 +63,11 @@ Uma linha por item aprovado na página de testes: data · o que mudou · o que p
 - 23/11/2026 · Banco · Nova obra fica gravada; código repetido é recusado (depois do conserto da política de leitura de obras).
 - 23/11/2026 · Banco · Devolver e Aprovar ficam gravados.
 - 23/11/2026 · Banco · O Mestre marca pronta e a frente chega para o Engenheiro aprovar.
+- 23/11/2026 · Diário · Mestre lança Avanço com 2 fotos; fotos ficam gravadas (F5) e aparecem de verdade.
+- 23/11/2026 · Diário · Aba Fotos agrupa por data (mais recente em cima) e filtra por ambiente.
+- 23/11/2026 · Diário · Foto grande com data, ambiente, frente e quem tirou; Anterior/Próxima.
+- 23/11/2026 · Diário · O Avanço (e a edição do %) muda o % da frente.
+- 23/11/2026 · Diário · Mestre edita só o próprio registro de hoje; Engenheiro edita qualquer dia.
+- 23/11/2026 · Diário · Uma obra não mostra as fotos da outra.
+- 23/11/2026 · Diário · Avanço sem frente não salva; tirar foto antes de salvar; sem internet avisa que não salvou.
+- 23/11/2026 · Diário · Excluir o registro apaga as fotos junto (banco e arquivos).

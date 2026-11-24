@@ -36,6 +36,10 @@ begin
   insert into public.contratos_empreiteiros (obra_id, frente_id, empreiteiro, valor_contratado) values (obra_a, frente_a, 'Emp A', 100);
   insert into public.lancamentos (obra_id, data, tipo, categoria, valor, pago_por, autor_id) values (obra_a, current_date, 'Saída', 'Outros', 10, 'Engenheiro', eng);
   insert into public.registros_diario (obra_id, data, tipo, texto, autor_id) values (obra_b, current_date, 'Equipe', 'B', eng);
+  -- arquivos de foto (só a linha; o arquivo em si não importa para a regra), um em cada obra
+  insert into storage.objects (bucket_id, name) values
+    ('fotos-obra', obra_a || '/' || public.hoje_obra() || '/a.jpg'),
+    ('fotos-obra', obra_b || '/' || public.hoje_obra() || '/b.jpg');
 
   -- ================= MESTRE (só obra A) =================
   perform set_config('request.jwt.claims', json_build_object('sub', mestre, 'role', 'authenticated')::text, true);
@@ -91,6 +95,31 @@ begin
   exception when others then ok := true; end;
   if not ok then falhas := falhas || 'Mestre lança diário em nome de outro'; end if;
 
+  -- editar o % de um Avanço do dia atualiza a frente (gatilho da migration 05)
+  begin
+    insert into public.registros_diario (obra_id, data, tipo, frente_id, texto, percentual_novo, autor_id)
+      values (obra_a, public.hoje_obra(), 'Avanço', frente_a, 'av', 30, mestre);
+    update public.registros_diario set percentual_novo = 45 where autor_id = mestre and tipo = 'Avanço';
+  exception when others then falhas := falhas || ('Mestre não lança/edita Avanço de hoje: ' || sqlerrm); end;
+  select count(*) into n from public.frentes where id = frente_a and percentual = 45;
+  if n <> 1 then falhas := falhas || 'Editar o % do Avanço não atualizou a frente'; end if;
+
+  -- fotos no Storage: pasta 1 = obra, pasta 2 = data
+  select count(*) into n from storage.objects where bucket_id = 'fotos-obra' and name like obra_b || '/%';
+  if n <> 0 then falhas := falhas || 'Mestre lê foto da obra B no Storage'; end if;
+  select count(*) into n from storage.objects where bucket_id = 'fotos-obra' and name like obra_a || '/%';
+  if n <> 1 then falhas := falhas || 'Mestre NÃO lê a foto da obra A no Storage'; end if;
+  begin insert into storage.objects (bucket_id, name, owner_id) values ('fotos-obra', obra_a || '/' || public.hoje_obra() || '/m.jpg', mestre::text);
+  exception when others then falhas := falhas || ('Mestre não envia foto de hoje na A: ' || sqlerrm); end;
+  ok := false;
+  begin insert into storage.objects (bucket_id, name) values ('fotos-obra', obra_a || '/' || (public.hoje_obra() - 1) || '/m.jpg');
+  exception when others then ok := true; end;
+  if not ok then falhas := falhas || 'Mestre envia foto com data de ontem'; end if;
+  ok := false;
+  begin insert into storage.objects (bucket_id, name) values ('fotos-obra', obra_b || '/' || public.hoje_obra() || '/m.jpg');
+  exception when others then ok := true; end;
+  if not ok then falhas := falhas || 'Mestre envia foto na obra B'; end if;
+
   ok := false;
   begin update public.profiles set role = 'Engenheiro' where id = mestre; exception when others then ok := true; end;
   if not ok then falhas := falhas || 'Mestre se promove a Engenheiro'; end if;
@@ -126,6 +155,8 @@ begin
   if n <> 0 then falhas := falhas || 'Aguardando vê obras'; end if;
   select count(*) into n from public.frentes;
   if n <> 0 then falhas := falhas || 'Aguardando vê frentes'; end if;
+  select count(*) into n from storage.objects where bucket_id = 'fotos-obra';
+  if n <> 0 then falhas := falhas || 'Aguardando vê fotos no Storage'; end if;
   select count(*) into n from public.profiles;
   if n <> 1 then falhas := falhas || format('Aguardando vê %s perfis (esperado só o dele)', n); end if;
   ok := false;
@@ -136,6 +167,10 @@ begin
   perform set_config('role', 'postgres', true);
   perform set_config('request.jwt.claims', json_build_object('sub', eng, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
+  select count(*) into n from storage.objects where bucket_id = 'fotos-obra' and name like obra_b || '/%';
+  if n <> 1 then falhas := falhas || 'Engenheiro NÃO lê a foto da obra B'; end if;
+  begin insert into storage.objects (bucket_id, name, owner_id) values ('fotos-obra', obra_b || '/' || (public.hoje_obra() - 5) || '/e.jpg', eng::text);
+  exception when others then falhas := falhas || ('Engenheiro não envia foto de dia antigo: ' || sqlerrm); end;
   select count(*) into n from public.obras where nome like 'Teste %';
   if n <> 2 then falhas := falhas || 'Engenheiro não vê as duas obras'; end if;
   select count(*) into n from public.lancamentos where obra_id = obra_a;

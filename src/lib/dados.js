@@ -19,7 +19,7 @@ export const {
   definirObraAtual, contasDeExemplo, obterPerfil, retomarSessao, sairDaConta, entrar, criarConta,
   listarObras, salvarObra, excluirObra, adicionarNaObra, removerDaObra,
   listarFrentes, obterFrente, salvarFrente, excluirFrente, aprovarFrente, devolverFrente, marcarFrentePronta,
-  listarRegistros, listarFotos, listarMateriais, mudarSituacaoMaterial,
+  listarRegistros, listarFotos, salvarRegistro, excluirRegistro, listarMateriais, mudarSituacaoMaterial,
   listarContratos, listarLancamentos, salvarContrato, marcarParcelaRecebida,
   listarCaixaGeral, listarPessoas, salvarAcesso, definirAtivo, salvarMeuNome,
 } = d

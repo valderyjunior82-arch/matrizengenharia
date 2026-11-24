@@ -10,7 +10,8 @@ import { emailEmUso, normalizarEmail, obrasDoAcesso, papelDaNovaConta, podeGeren
 import { CAMPOS_CONTRATO, CAMPOS_CRIAR_CONTA, CAMPOS_FRENTE, CAMPOS_OBRA, paraNumero, validar } from './formularios.js'
 import { camposDaFrente, frenteTemRegistros, MSG_FRENTE_COM_REGISTROS, podeEditarFrente, podeMarcarPronta } from './frentes.js'
 import { codigoEmUso, erroAoRemover, MSG_OBRA_COM_REGISTROS, obraTemRegistros, podeEntrarNaObra } from './obras.js'
-import { ehEngenheiro, ehMestre } from './permissoes.js'
+import { ehEngenheiro, ehMestre, podeEditarRegistro } from './permissoes.js'
+import { caminhoFoto, camposDoRegistro, frenteAposAvanco, mexeNaFrente } from './diario.js'
 import {
   mockProfiles, mockSenhas, SENHA_DE_TESTE, mockObras, mockMembros, mockFrentes, mockContratos,
   mockRegistros, mockFotos, mockMateriais, mockLancamentos,
@@ -211,6 +212,44 @@ export const marcarFrentePronta = (quem, id) => responder(() => {
 // ---------- diário e fotos ----------
 export const listarRegistros = () => responder(() => comAutor(daObra(db.registros, exigirObra())))
 export const listarFotos = () => responder(() => comAutor(daObra(db.fotos, exigirObra())))
+
+function registroDaObra(id) {
+  const r = daObra(db.registros, exigirObra()).find((x) => x.id === id)
+  if (!r) throw new Error('Este registro não é da obra escolhida.')
+  return r
+}
+
+// Mesmo contrato do banco. No mock a foto não sobe: guarda o link de prévia que a tela criou ({ previa }).
+export const salvarRegistro = (quem, id, tipo, valores, fotos = []) => responder(() => {
+  if (!ehEngenheiro(quem) && !ehMestre(quem)) throw new Error('Sua conta não pode lançar no diário.')
+  const anterior = id ? registroDaObra(id) : null
+  if (anterior && !podeEditarRegistro(quem, anterior, hoje())) throw new Error('Este registro não pode mais ser editado por você.')
+  const { campos, erro } = camposDoRegistro(anterior?.tipo ?? tipo, anterior ? { ...valores, frente_id: anterior.frente_id } : valores)
+  if (erro) throw new Error(erro)
+  const ambiente = campos.frente_id ? frenteDaObra(campos.frente_id).ambiente : null
+  const mexe = mexeNaFrente(anterior, campos)
+  const r = anterior
+    ? Object.assign(anterior, { texto: campos.texto, percentual_novo: campos.percentual_novo })
+    : { id: crypto.randomUUID(), obra_id: exigirObra(), data: hoje(), autor_id: quem.id, ...campos }
+  if (!anterior) db.registros.push(r)
+  if (mexe) db.frentes = db.frentes.map((f) => frenteAposAvanco(f, r))
+  for (const foto of fotos) {
+    const fotoId = crypto.randomUUID()
+    db.fotos.push({
+      id: fotoId, obra_id: r.obra_id, registro_id: r.id, frente_id: r.frente_id, ambiente, data: r.data,
+      caminho: caminhoFoto(r.obra_id, r.data, fotoId), url: foto.previa ?? null, autor_id: quem.id,
+    })
+  }
+  return r
+})
+
+export const excluirRegistro = (quem, id) => responder(() => {
+  const r = registroDaObra(id)
+  if (!podeEditarRegistro(quem, r, hoje())) throw new Error('Este registro não pode mais ser apagado por você.')
+  db.registros = db.registros.filter((x) => x.id !== id)
+  db.fotos = db.fotos.filter((f) => f.registro_id !== id)
+  return { id }
+})
 
 // ---------- materiais ----------
 export const listarMateriais = () => responder(() => daObra(db.materiais, exigirObra()))

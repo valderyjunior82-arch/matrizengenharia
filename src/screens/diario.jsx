@@ -4,6 +4,7 @@ import { hoje as hojeDe } from '../lib/config.js'
 import { listarFotos, listarFrentes, listarRegistros } from '../lib/dados.js'
 import { useCarregar, juntar } from '../lib/usarDados.js'
 import { ambientesDe } from '../lib/frentes.js'
+import { fotosPorDia, rotuloFoto } from '../lib/diario.js'
 import { dataCurta, diaRelativo, diaSemanaCurto, plural } from '../lib/formato.js'
 import { Cartao, Carregando, Chip, ErroCarga, GradeFotos, Icon, Vazio } from '../components/index.jsx'
 import { AbasTopo } from '../components/Shell.jsx'
@@ -42,9 +43,9 @@ export default function Diario({ goto }) {
   }
 
   if (aba === 'fotos') {
-    const ambientes = ambientesDe(fotos)
+    const ambientes = ambientesDe(fotos.filter((f) => f.ambiente))
     const visiveis = fotos.filter((f) => filtro === 'todos' || f.ambiente === filtro || f.frente_id === filtro)
-    const diasComFoto = [...new Set(visiveis.map((f) => f.data))].sort().reverse()
+    const porDia = fotosPorDia(visiveis)
     const frentesComFoto = frentes.filter((fr) => fotos.some((f) => f.frente_id === fr.id))
     return (
       <>
@@ -56,14 +57,11 @@ export default function Diario({ goto }) {
             {frentesComFoto.map((fr) => <button key={fr.id} className={`fchip ${filtro === fr.id ? 'on' : ''}`} onClick={() => setFiltro(fr.id)}>{fr.servico}</button>)}
           </div>
         )}
-        {diasComFoto.length ? diasComFoto.map((d) => {
-          const doDia = visiveis.filter((f) => f.data === d)
-          return (
-            <Cartao key={d} titulo={diaRelativo(d, hoje)} acao={<span className="muted pequeno">{plural(doDia.length, 'foto', 'fotos')}</span>}>
-              <GradeFotos fotos={doDia} rotulo={(f) => `${f.ambiente} · ${servico(f.frente_id)?.split(/[\s–]/)[0] ?? ''}`} />
-            </Cartao>
-          )
-        }) : <div className="card"><Vazio icone="camera" titulo="Nenhuma foto nesta obra ainda." texto="As fotos entram pelo diário." /></div>}
+        {porDia.length ? porDia.map(({ data: d, fotos: doDia }) => (
+          <Cartao key={d} titulo={diaRelativo(d, hoje)} acao={<span className="muted pequeno">{plural(doDia.length, 'foto', 'fotos')}</span>}>
+            <GradeFotos fotos={doDia} rotulo={(f) => rotuloFoto(f, frentes)} />
+          </Cartao>
+        )) : <div className="card"><Vazio icone="camera" titulo="Nenhuma foto nesta obra ainda." texto="As fotos entram pelo diário." /></div>}
       </>
     )
   }

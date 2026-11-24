@@ -1,47 +1,104 @@
-// Lançar no diário — três botões grandes (Avanço · Equipe · Ocorrência) e o formulário.
+// Lançar no diário — três botões grandes (Avanço · Equipe · Ocorrência), o formulário e as fotos.
+// Com params.id, edita aquele registro (só texto, % e mais fotos; tipo e frente ficam).
 import { useState } from 'react'
 import { hoje as hojeDe } from '../lib/config.js'
-import { listarFrentes } from '../lib/dados.js'
-import { useCarregar } from '../lib/usarDados.js'
+import { listarFrentes, listarRegistros, salvarRegistro } from '../lib/dados.js'
+import { useCarregar, juntar } from '../lib/usarDados.js'
 import { camposDiario } from '../lib/formularios.js'
 import { TIPOS_REGISTRO } from '../lib/vocabulario.js'
 import { diaRelativo } from '../lib/formato.js'
+import { frentesParaAvanco } from '../lib/diario.js'
 import { avisar, BotaoVoltar, Cartao, Carregando, ErroCarga, Formulario, Icon } from '../components/index.jsx'
 
 const ICONE_TIPO = { Avanço: 'frentes', Equipe: 'equipe', Ocorrência: 'alerta' }
+const TITULO_TIPO = { Avanço: 'Avanço de frente', Equipe: 'Equipe presente', Ocorrência: 'Ocorrência' }
 
-export default function LancarDiario({ goto, voltar: volta }) {
+// Diminui a foto no celular antes de subir (máx. 1200px no lado maior, JPEG 0.8): menos internet no canteiro.
+async function comprimir(arquivo) {
+  const img = await createImageBitmap(arquivo)
+  const escala = Math.min(1, 1200 / Math.max(img.width, img.height))
+  const tela = document.createElement('canvas')
+  tela.width = Math.round(img.width * escala)
+  tela.height = Math.round(img.height * escala)
+  tela.getContext('2d').drawImage(img, 0, 0, tela.width, tela.height)
+  const blob = await new Promise((ok) => tela.toBlob(ok, 'image/jpeg', 0.8))
+  // shortcut: a prévia (link local) não é solta; some ao recarregar a página. No mock ela é a própria foto.
+  return { blob, previa: URL.createObjectURL(blob) }
+}
+
+export default function LancarDiario({ goto, voltar: volta, params = {}, profile }) {
   const hoje = hojeDe()
-  const [tipo, setTipo] = useState(null)
-  const { carregando, erro, data: frentes, recarregar } = useCarregar(listarFrentes)
+  const [tipoEscolhido, setTipo] = useState(null)
+  const [fotos, setFotos] = useState([])
+  const { carregando, erro, data, recarregar } = useCarregar(() => juntar({ frentes: listarFrentes(), registros: listarRegistros() }))
 
   const voltar = <BotaoVoltar voltar={volta} />
-  if (carregando && !frentes) return <>{voltar}<Carregando /></>
+  if (carregando && !data) return <>{voltar}<Carregando /></>
   if (erro) return <>{voltar}<ErroCarga mensagem={erro} onTentar={recarregar} /></>
 
-  const abertas = frentes.filter((f) => f.situacao !== 'Concluída')
+  const registro = params.id ? data.registros.find((r) => r.id === params.id) : null
+  if (params.id && !registro) return <>{voltar}<ErroCarga mensagem="Este registro não existe mais." onTentar={recarregar} /></>
+  const tipo = registro?.tipo ?? tipoEscolhido
+
+  const abertas = frentesParaAvanco(data.frentes, registro)
   const listas = { frentes: abertas.map((f) => ({ valor: f.id, rotulo: `${f.servico} · ${f.ambiente} (hoje ${f.percentual}%)` })) }
+  const campos = registro ? camposDiario(tipo).filter((c) => c.nome !== 'frente_id') : camposDiario(tipo)
+  const inicial = registro ? { texto: registro.texto, percentual_novo: registro.percentual_novo ?? '' } : undefined
+
+  const escolherFotos = async (e) => {
+    const arquivos = [...e.target.files]
+    e.target.value = ''
+    try {
+      const novas = await Promise.all(arquivos.map(comprimir))
+      setFotos((atuais) => [...atuais, ...novas.map((n) => ({ ...n, id: crypto.randomUUID() }))])
+    } catch {
+      avisar('Não foi possível abrir esta foto. Tente outra.')
+    }
+  }
+
+  const salvar = async (valores) => {
+    const { erro: e } = await salvarRegistro(profile, registro?.id ?? null, tipo, valores, fotos)
+    if (e) return avisar(e)
+    avisar(registro ? 'Registro atualizado.' : 'Lançado no diário.')
+    goto('diario')
+  }
 
   return (
     <>
       {voltar}
-      <div className="titulo-tela"><div><div className="mono">Lançar no diário</div><h2>{diaRelativo(hoje, hoje)}</h2></div></div>
-      <div className="tipos" role="group" aria-label="Tipo do registro">
-        {TIPOS_REGISTRO.map((t) => (
-          <button key={t} className={`tipo ${tipo === t ? 'on' : ''}`} onClick={() => setTipo(t)} aria-pressed={tipo === t}>
-            <Icon nome={ICONE_TIPO[t]} tamanho={26} />{t}
-          </button>
-        ))}
-      </div>
-      {tipo && (
-        <Cartao titulo={tipo === 'Avanço' ? 'Avanço de frente' : tipo === 'Equipe' ? 'Equipe presente' : 'Ocorrência'}>
-          <div style={{ padding: '14px 14px 0' }}>
-            <button className="foto-btn" onClick={() => avisar('A câmera entra junto com o Storage, na etapa do banco.')}>
-              <Icon nome="camera" tamanho={30} />Tirar ou escolher fotos
+      <div className="titulo-tela"><div>
+        <div className="mono">{registro ? 'Editar registro' : 'Lançar no diário'}</div>
+        <h2>{diaRelativo(registro?.data ?? hoje, hoje)}</h2>
+      </div></div>
+      {!registro && (
+        <div className="tipos" role="group" aria-label="Tipo do registro">
+          {TIPOS_REGISTRO.map((t) => (
+            <button key={t} className={`tipo ${tipo === t ? 'on' : ''}`} onClick={() => setTipo(t)} aria-pressed={tipo === t}>
+              <Icon nome={ICONE_TIPO[t]} tamanho={26} />{t}
             </button>
+          ))}
+        </div>
+      )}
+      {tipo && (
+        <Cartao titulo={TITULO_TIPO[tipo]}>
+          <div style={{ padding: '14px 14px 0' }}>
+            <label className="foto-btn">
+              <Icon nome="camera" tamanho={30} />{fotos.length ? 'Mais fotos' : 'Tirar ou escolher fotos'}
+              <input type="file" accept="image/*" multiple onChange={escolherFotos} style={{ display: 'none' }} />
+            </label>
+            {fotos.length > 0 && (
+              <div className="miniaturas">
+                {fotos.map((f) => (
+                  <div key={f.id}>
+                    <img src={f.previa} alt="Foto escolhida" />
+                    <button type="button" aria-label="Tirar esta foto" onClick={() => setFotos(fotos.filter((x) => x !== f))}>×</button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <Formulario key={tipo} campos={camposDiario(tipo)} listas={listas} onCancelar={volta.ir}
-            onSalvar={() => { avisar('Campos conferidos. Gravar de verdade entra na etapa do banco.'); goto('diario') }} />
+          <Formulario key={tipo} campos={campos} inicial={inicial} listas={listas} onCancelar={volta.ir}
+            rotuloSalvar={fotos.length ? `Salvar com ${fotos.length} foto${fotos.length > 1 ? 's' : ''}` : 'Salvar'} onSalvar={salvar} />
         </Cartao>
       )}
     </>

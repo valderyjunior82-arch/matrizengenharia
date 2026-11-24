@@ -17,8 +17,9 @@ import { normalizarEmail, obrasDoAcesso, podeGerenciar } from './pessoas.js'
 import { CAMPOS_CONTRATO, CAMPOS_CRIAR_CONTA, CAMPOS_FRENTE, CAMPOS_OBRA, paraNumero, validar } from './formularios.js'
 import { camposDaFrente, podeEditarFrente } from './frentes.js'
 import { erroAoRemover, podeEntrarNaObra } from './obras.js'
-import { ehEngenheiro, ehMestre } from './permissoes.js'
-import { traduzirErro } from './errosBanco.js'
+import { ehEngenheiro, ehMestre, podeEditarRegistro } from './permissoes.js'
+import { MSG_SEM_PERMISSAO, traduzirErro } from './errosBanco.js'
+import { caminhoFoto, camposDoRegistro } from './diario.js'
 
 let obraAtualId = null
 export function definirObraAtual(id) {
@@ -251,7 +252,75 @@ export const marcarFrentePronta = (quem, id) => responder(async () => {
 
 // ---------- diário e fotos ----------
 export const listarRegistros = () => responder(async () => comAutor(await daObraAtual('registros_diario')))
-export const listarFotos = () => responder(async () => comAutor(await daObraAtual('fotos')))
+
+const FOTOS = 'fotos-obra'
+// As fotos são privadas: cada uma abre por um link que vale 1 hora.
+// Foto sem arquivo (as de exemplo da carga) fica com url null e a tela mostra o quadro cinza.
+export const listarFotos = () => responder(async () => {
+  const fotos = await comAutor(await daObraAtual('fotos'))
+  const caminhos = fotos.map((f) => f.caminho).filter(Boolean)
+  const links = caminhos.length ? ok(await banco().storage.from(FOTOS).createSignedUrls(caminhos, 3600)) : []
+  return fotos.map((f) => ({ ...f, url: links.find((l) => l.path === f.caminho)?.signedUrl ?? null }))
+})
+
+async function registroDaObra(id) {
+  const r = ok(await banco().from('registros_diario').select('*').eq('id', id).eq('obra_id', exigirObra()).maybeSingle())
+  if (!r) throw new Error('Este registro não é da obra escolhida.')
+  return r
+}
+
+// Novo registro (id = null, sempre com a data de hoje) ou edição (só texto e %).
+// `fotos` = arquivos JPEG novos ({ blob }), que entram com a data do registro.
+// Ordem: arquivos → registro → linhas das fotos (de uma vez). Os arquivos sobem antes porque
+// o registro novo já mexe na frente (gatilho do banco): se uma foto falhar, nada foi gravado
+// e os arquivos que subiram são removidos.
+export const salvarRegistro = (quem, id, tipo, valores, fotos = []) => responder(async () => {
+  if (!ehEngenheiro(quem) && !ehMestre(quem)) throw new Error('Sua conta não pode lançar no diário.')
+  const obraId = exigirObra()
+  const anterior = id ? await registroDaObra(id) : null
+  if (anterior && !podeEditarRegistro(quem, anterior, hoje())) throw new Error('Este registro não pode mais ser editado por você.')
+  const { campos, erro } = camposDoRegistro(anterior?.tipo ?? tipo, anterior ? { ...valores, frente_id: anterior.frente_id } : valores)
+  if (erro) throw new Error(erro)
+  const registroId = anterior?.id ?? crypto.randomUUID()
+  const data = anterior?.data ?? hoje()
+  const ambiente = campos.frente_id ? (await frenteDaObra(campos.frente_id, 'ambiente')).ambiente : null
+
+  const linhas = []
+  let inserido = false
+  try {
+    for (const foto of fotos) {
+      const fotoId = crypto.randomUUID()
+      const caminho = caminhoFoto(obraId, data, fotoId)
+      ok(await banco().storage.from(FOTOS).upload(caminho, foto.blob, { contentType: 'image/jpeg' }))
+      linhas.push({ id: fotoId, obra_id: obraId, registro_id: registroId, frente_id: campos.frente_id, ambiente, data, caminho, autor_id: quem.id })
+    }
+    const r = anterior
+      ? ok(await banco().from('registros_diario').update({ texto: campos.texto, percentual_novo: campos.percentual_novo })
+        .eq('id', id).eq('obra_id', obraId).select().single())
+      : ok(await banco().from('registros_diario').insert({ id: registroId, ...campos, obra_id: obraId, data, autor_id: quem.id }).select().single())
+    inserido = !anterior
+    if (linhas.length) ok(await banco().from('fotos').insert(linhas))
+    return r
+  } catch (e) {
+    // Registro novo que entrou sem as fotos sai de novo: senão a tela diz "não salvou", a pessoa
+    // tenta outra vez e o registro duplica. (O % que o gatilho já pôs na frente fica.)
+    if (inserido) await banco().from('registros_diario').delete().eq('id', registroId)
+    if (linhas.length) await banco().storage.from(FOTOS).remove(linhas.map((l) => l.caminho))
+    throw e
+  }
+})
+
+// Apaga o registro (as linhas das fotos vão junto, pela chave do banco) e depois os arquivos.
+export const excluirRegistro = (quem, id) => responder(async () => {
+  const r = await registroDaObra(id)
+  if (!podeEditarRegistro(quem, r, hoje())) throw new Error('Este registro não pode mais ser apagado por você.')
+  const caminhos = (await todas(() => banco().from('fotos').select('id, caminho').eq('registro_id', id))).map((f) => f.caminho).filter(Boolean)
+  const apagados = ok(await banco().from('registros_diario').delete().eq('id', id).eq('obra_id', exigirObra()).select('id'))
+  if (!apagados.length) throw new Error(MSG_SEM_PERMISSAO)
+  // shortcut: se apagar o arquivo falhar, ele fica sem ninguém apontar (ninguém vê); limpar à mão se o Storage encher.
+  if (caminhos.length) await banco().storage.from(FOTOS).remove(caminhos)
+  return { id }
+})
 
 // ---------- materiais ----------
 export const listarMateriais = () => responder(() => daObraAtual('materiais'))

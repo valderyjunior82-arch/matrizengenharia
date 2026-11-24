@@ -27,6 +27,8 @@ conferir('apagar frente com contrato',
   traduzirErro({ code: '23503', message: 'update or delete on table "frentes" violates foreign key constraint "contratos_empreiteiros_frente_id_obra_id_fkey" on table "contratos_empreiteiros"' }),
   MSG_FRENTE_COM_REGISTROS)
 conferir('RLS recusou', traduzirErro({ code: '42501', message: 'new row violates row-level security policy for table "obras"' }), MSG_SEM_PERMISSAO)
+conferir('Storage recusou (sem code, frase em inglês)',
+  traduzirErro({ statusCode: '403', message: 'new row violates row-level security policy' }), MSG_SEM_PERMISSAO)
 conferir('trava do papel em português passa direto',
   traduzirErro({ code: '42501', message: 'Ninguém muda o próprio acesso.' }), 'Ninguém muda o próprio acesso.')
 conferir('erro desconhecido do banco não mostra inglês', traduzirErro({ code: 'XX000', message: 'internal error' }), MSG_GENERICA)

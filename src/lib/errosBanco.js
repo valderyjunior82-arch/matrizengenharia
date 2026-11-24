@@ -21,6 +21,8 @@ export function traduzirErro(e) {
   if (!e) return null
   const texto = String(e.message ?? e)
   if (/failed to fetch|networkerror|load failed|fetch failed/i.test(texto)) return MSG_SEM_REDE
+  // O Storage recusa sem `code` do Postgres, só com a frase em inglês.
+  if (!e.code && /row-level security/i.test(texto)) return MSG_SEM_PERMISSAO
   switch (e.code) {
     case 'P0001': return texto // frase em português escrita nas funções do banco
     case '23505': return UNICOS[Object.keys(UNICOS).find((k) => texto.includes(k))] ?? 'Já existe um cadastro igual a este.'
