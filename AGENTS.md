@@ -1,7 +1,7 @@
 # Matriz Engenharia (app de obras)
 
 Acompanhamento de obras de reforma: o mestre lança o diário com foto no canteiro, o engenheiro abre de manhã uma tela com o que está atrasando, o que comprar e quanto foi gasto.
-React + Vite + Supabase (ainda não ligado) + Vercel. Perfis: Engenheiro (`src/pages/AppEngenheiro.jsx`), Mestre (`src/pages/AppMestre.jsx`), Aguardando (`src/pages/Aguardando.jsx`). Os dois apps usam o mesmo roteador, `src/pages/AppBase.jsx`.
+React + Vite + Supabase + Vercel. Perfis: Engenheiro (`src/pages/AppEngenheiro.jsx`), Mestre (`src/pages/AppMestre.jsx`), Aguardando (`src/pages/Aguardando.jsx`). Os dois apps usam o mesmo roteador, `src/pages/AppBase.jsx`.
 Fonte das decisões: `PLANO-DO-PROJETO.md`, `PRD-FRONTEND.md`, `PRD-BACKEND.md`. Referência visual aprovada: `preview.html`.
 
 ## ESTE APP É MULTI-OBRA (vale para todo módulo, agora e depois)
@@ -9,7 +9,7 @@ Fonte das decisões: `PLANO-DO-PROJETO.md`, `PRD-FRONTEND.md`, `PRD-BACKEND.md`.
 O engenheiro toca várias obras ao mesmo tempo, e os dados de uma **nunca** aparecem em outra.
 
 1. **Toda tabela de lançamento tem `obra_id` obrigatório** (`not null`, apontando para `obras`). Sem exceção: gasto que não é de obra nenhuma vai para a obra interna **"Empresa (sem obra)"** (`interna = true`), que não aparece no seletor e só entra no Caixa geral.
-2. **Todo módulo novo filtra por `obra_id`.** E quem filtra é a camada de dados, não a tela: `src/lib/dados.js` guarda a obra atual (`definirObraAtual`) e toda função de lista passa por `daObra()` (`src/lib/escopo.js`). As telas **não passam** `obra_id`; assim nenhuma consegue esquecer o filtro.
+2. **Todo módulo novo filtra por `obra_id`.** E quem filtra é a camada de dados, não a tela: `src/lib/dados.js` guarda a obra atual (`definirObraAtual`) e toda função de lista filtra por ela sozinha: `daObra()` (`src/lib/escopo.js`) no mock, `daObraAtual()` (`.eq('obra_id', …)`) em `dadosBanco.js`. As telas **não passam** `obra_id`; assim nenhuma consegue esquecer o filtro.
 3. **Nenhuma tela mostra duas obras juntas**, a não ser que seja explicitamente um comparativo entre obras, e diga isso na tela. Hoje só existe um: o **Caixa geral** (`listarCaixaGeral`). Comparativo novo = função nova em `dados.js`, com o comentário dizendo que é comparativo.
 4. **Trocar de obra remonta a tela inteira** (`key={obraId}` no `<main>` do `Shell`). Nada de cache, `useRef` ou `localStorage` sem o `obra_id` na chave.
 5. **A obra escolhida fica guardada** por pessoa (`matriz:obra:<profile_id>` no navegador) e volta quando o app reabre.
@@ -41,11 +41,13 @@ Três consequências práticas:
 npm run check
 ```
 
-Build + lint + testes. **Fecha em zero** — não há linha de base herdada aqui. Aviso novo é seu e é de agora; conserte no mesmo lote.
+Build + lint + testes (inclui `check-grants`, que lê as migrations, e `check-schema`, que cruza as colunas do código com `tests/_schema-snapshot.json`). **Fecha em zero** — não há linha de base herdada aqui. Aviso novo é seu e é de agora; conserte no mesmo lote.
 
 Nada disso prova que a tela funciona. Verde com a tela em branco é rotina: abra a tela, nas duas obras.
 
 **Todo bug corrigido em `src/lib/` nasce com teste junto** em `tests/`, no mesmo lote. Build e lint não pegam regra errada.
+
+**Mudou permissão no banco (RLS, GRANT, função): rode `supabase/tests/permissoes.sql`** pelo `execute_sql`. Ele SEMPRE termina em erro de propósito (para desfazer tudo); a mensagem diz "TUDO CERTO" ou lista o que vazou. **Mudou coluna: regenere o `_schema-snapshot.json`** — snapshot velho passa verde mentindo.
 
 No Windows, se `npm` reclamar de "execução de scripts desabilitada", use `npm.cmd` / `npx.cmd`. Nunca mexer na política de execução do Windows.
 
@@ -63,6 +65,12 @@ Ainda não está no ar. O padrão desta casa: a pessoa diz "sobe pro GitHub", o 
 - **Datas são texto `AAAA-MM-DD` e as contas são em UTC** (`src/lib/datas.js`). Nunca `new Date().toISOString().slice(0, 10)` para "hoje": vira UTC e pula um dia à noite. Use `hoje()` de `config.js`.
 - **Dinheiro soma em centavos** (`src/lib/financeiro.js`). Nunca somar `valor` direto em ponto flutuante.
 - **Nota "pago por Cliente" entra no gasto da obra, mas não no saldo do caixa.** Está testado; não "simplifique".
+- **Banco:** projeto Supabase `matriz-engenharia` (id `cwfmrqyisksvejhyssks`, São Paulo). Toda mudança é arquivo em `supabase/migrations/`, aplicado com `apply_migration` — nunca clique no painel. O Mestre não lê `profiles` dos colegas (tem email): nome de quem lançou sai de `public.nomes_visiveis()`, que devolve só id e nome. Política de linha de obra passa **sempre** por `public.obras_visiveis()`; dinheiro, por `public.eh_engenheiro()`. O Mestre só muda frente/material pelas funções `marcar_frente_pronta` e `marcar_material_entregue`.
+- **Os 6 avisos "SECURITY DEFINER executável" do painel são intencionais** (as funções das políticas, `nomes_visiveis` e as duas do Mestre; cada uma só devolve o que a pessoa já pode ver). Aviso novo além desses: investigue.
+- **Confirmação de email está DESLIGADA** no Supabase (decisão do engenheiro em 23/11): o email grátis do Supabase só entrega para o dono, e o Mestre nunca receberia o link. Conta nova entra em `Aguardando` e não vê nada até ser liberada; essa é a tranca.
+- **Chave mock × banco:** `USAR_MOCK` em `config.js` (hoje `false`). `dados.js` só escolhe entre `dadosMock.js` e `dadosBanco.js`, que têm as mesmas funções: função nova vai nas duas e na lista de `dados.js`. Os testes em `tests/` importam `dadosMock.js` (rodam sem internet).
+- **Obra com chave dupla:** frentes, materiais, contratos e registros têm `unique (id, obra_id)` e as outras tabelas apontam para a dupla. É o banco garantindo que a frente de um lançamento é da mesma obra. Não troque por FK simples.
+- **Apagar com registro ligado** é recusado pela chave estrangeira; `src/lib/errosBanco.js` traduz para a frase da tela. Erro novo do banco que aparece em inglês: traduza lá, com teste em `tests/erros-banco.mjs`.
 - **Situação da obra** é `Em andamento · Parada · Concluída` (decisão do engenheiro em 21/11/2026, mais nova que o PRD original). Obra concluída sai do seletor, mas continua no Caixa geral.
 
 ## Convenções visuais (decididas em 21/11/2026)
@@ -167,35 +175,35 @@ Resposta curta, em português simples, sem jargão:
 - o que não deu para conferir e por quê;
 - o que espera uma decisão dele: uma pergunta por vez, com a recomendação do agente.
 
-## Onde paramos (22/11/2026, fim da conversa)
+## Onde paramos (23/11/2026, fim da conversa)
 
 Esta seção é **substituída** no fim de cada conversa, não acumula. O que já passou nos testes fica em `docs/DIARIO.md`.
 
-**Pronto (no GitHub), tudo ainda com dados de exemplo (`USAR_MOCK = true`):**
-- **Login e pessoas** (commit `947d3b0`): Login, Criar conta, tela de espera que confere a cada 15 s, Pessoas (Liberar, Editar, Desativar, Reativar), Meu perfil (Editar nome). Regras em `src/lib/pessoas.js`, testes em `tests/pessoas.mjs`. 15 itens aprovados.
-- **Obras e seletor** (commit `287f6c7`): Nova obra, Editar e Excluir (só obra sem registros), Adicionar e Remover mestre da obra, seletor do topo que se atualiza na hora (`recarregarObras` no `ObraContext`). Regras em `src/lib/obras.js`, testes em `tests/obras.mjs`. 13 itens aprovados. Depois do teste, a revisão de código gerou 5 consertos (excluir travado durante o envio, erro na recarga não derruba o app, mestre desativado sai livre, etiqueta de situação neutra, "Abrir esta obra" pergunta a `obrasDoSeletor`). Os testes do engenheiro aprovaram 4 deles (Rodada 4). O quinto, "erro na recarga", não pôde ser testado porque o mock nunca falha: confira na etapa do banco.
-- **Decidido pelo engenheiro em 22/11:** concluir ou excluir uma obra pode deixar um Mestre sem nenhuma obra, sem aviso ("obra que acabou, acabou"). Só o Remover impede tirar da última. Não "conserte".
-- A página de testes diz "Nada a testar agora": https://claude.ai/artifact/DUuJHnZp9uWE75DAtNVTc8
+**No GitHub:** login e pessoas, obras e seletor, frentes de serviço (com os consertos das revisões e as decisões de 23/11: sair de Concluída mantém o % digitado; só o botão Marcar como pronta leva para a aprovação). Tudo aprovado nas rodadas 1 a 6, ainda com dados de exemplo.
 
-**Pela metade** (5 pontos menores da revisão do módulo de pessoas, sem conserto, o engenheiro ainda não decidiu):
-1. "Primeira conta vira Engenheiro e cai em Hoje vazio" só tem teste automático. O mock nunca começa sem contas, então não dá para ver na tela.
-2. Falha ao criar conta não mostra a frase do plano: "Não foi possível criar sua conta agora. Tente de novo em alguns minutos."
-3. `src/screens/pessoas.jsx` decide Liberar × Editar com `role === 'Aguardando'` escrito à mão. Pela regra, isso vai para `lib/pessoas.js`, e o texto vem de `vocabulario.js`.
-4. `salvarMeuNome` (`dados.js`) não confere se a conta existe e está ativa, e não usa `validar(CAMPOS_MEU_NOME)`.
-5. O link "Criar conta / Entrar" do login usa `.link`, que é mono em caixa-alta; a convenção visual não permite.
+**Etapa do banco (23/11):** o app grava no Supabase (`USAR_MOCK = false`). Feito:
+- Migrations `supabase/migrations/20261123-01-esquema.sql` e `-02-service-role.sql`: todas as tabelas do PRD-BACKEND, RLS, GRANT, gatilhos (primeira conta vira Engenheiro, quem cria a obra entra nela, Avanço do diário atualiza a frente, trava do papel) e as funções do Mestre.
+- O teste de permissões (`supabase/tests/permissoes.sql`) deu TUDO CERTO.
+- O engenheiro criou a conta dele pelo app e entrou como Engenheiro (a regra "primeira conta" passou de verdade).
+- A carga de exemplo (`supabase/seed-exemplo.sql`, gerada por `node supabase/gerar-seed.mjs`) está no banco: Apto 1802 e Apto 501, com o engenheiro como autor de tudo (não havia Mestre).
+- O agente **não conseguiu ver a tela logada**: a sessão do engenheiro é no navegador dele, e o agente não entra com a senha dele. Conferiu pelo banco, simulando a conta dele.
+- **Rodada 7 aprovada (14 itens).** "Nova obra" falhava (a política de leitura de `obras` não enxergava a obra recém-criada no `insert ... returning`); corrigido na migration `-03-obra-nova-visivel.sql`, e o teste de permissões passou a gravar com `returning`, como o app faz. A página diz "Nada a testar agora".
+- Existe uma conta de teste "Mestre Teste" (do engenheiro), liberada só no Apto 501.
+- O dev server sobe em **http://localhost:5173**, e o login fica guardado por endereço: se a porta mudar, ele precisa entrar de novo.
+- Aviso novo no painel: "Leaked Password Protection Disabled" (a checagem de senha vazada é recurso do plano pago do Supabase). Ainda não foi explicado ao engenheiro.
 
-Também sem conserto: o cadastro de obra aceita data-meta de entrega anterior à data de início.
+**No GitHub** depois da revisão de código (que gerou a migration `-04-nomes-e-diario.sql`: o Mestre só vê o NOME dos colegas, e diário com data antiga não derruba o %).
 
-**Frentes de serviço** (commit `e9377f1`): Nova frente, Editar, Cadastrar contrato e Excluir gravam no mock. Excluir só frente sem registros (decisão do engenheiro em 22/11). Rodada 5 aprovada (12 itens); a página diz "Nada a testar agora". A revisão de código gerou 3 consertos (concluir pelo Editar apaga o aviso de devolução, subir o % pelo Editar conta como avanço, % lido com `paraNumero`), só com teste automático. Decidido pelo engenheiro em 23/11: sair de Concluída mantém o % digitado (não "conserte"); só o botão Marcar como pronta leva para a aprovação (a opção saiu do formulário e frente aguardando não mostra Editar; Rodada 6 aprovada). A página diz "Nada a testar agora".
+**Falta, nesta ordem sugerida:**
+1. Decidir com ele: manter as obras de exemplo ou limpar o banco para o uso real (etapa 8 da skill). Se limpar, apagar só os dados de exemplo (ids `md5('matriz-seed:...')`) e só com o ok dele.
+2. Storage das fotos (buckets `fotos-obra` e `comprovantes`, privados) e os formulários de diário, material, nota e parcela, que ainda só mostram o aviso.
+3. Vercel (etapa 9): variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`.
 
-**Ainda só com aviso "entra na etapa do banco":** os formulários de gravação de diário, material, nota e parcela.
-
-**Próximo passo:** a **etapa do Supabase**. É a recomendação do agente, mas o engenheiro ainda não confirmou: pergunte no começo da conversa nova. É nela que login, pessoas, obras e membros passam a gravar de verdade, com a RLS por `membros` e o seed das duas obras. Ele quer usar de verdade a partir de 23/11, e com o mock nada sobrevive ao F5. Alternativa: os 5 pontos acima.
-
-**Armadilhas do mock:**
-- **O F5 zera tudo:** contas, liberações, obras cadastradas, quem está em cada obra.
-- **Cada aba tem a sua cópia dos dados:** o que muda numa aba não chega na outra. Para testar o Mestre vendo uma obra nova, saia e entre como Mestre **na mesma aba**, sem F5.
-- **A senha `obra1234` é só do mock.** Ela fica em `mockSenhas`, à parte de `profiles`, e some na etapa do banco.
+**Pela metade** (pontos menores, o engenheiro ainda não decidiu):
+1. `src/screens/pessoas.jsx` decide Liberar × Editar com `role === 'Aguardando'` escrito à mão; pela regra, vai para `lib/pessoas.js`.
+2. O link "Criar conta / Entrar" do login usa `.link`, que é mono em caixa-alta; a convenção visual não permite.
+3. O cadastro de obra aceita data-meta de entrega anterior à data de início (o `naoAntesDe` resolve em uma linha).
+4. `src/screens/frente.jsx` decide Aprovar/Devolver com `f.situacao === 'Aguardando aprovação'` escrito à mão.
 
 ## O que entra neste arquivo
 

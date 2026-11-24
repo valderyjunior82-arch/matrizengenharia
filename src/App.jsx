@@ -10,7 +10,8 @@ import AppEngenheiro from './pages/AppEngenheiro.jsx'
 import AppMestre from './pages/AppMestre.jsx'
 
 function Raiz() {
-  const { profile } = useSessao()
+  const { profile, carregando } = useSessao()
+  if (carregando) return <div className="entrada"><div className="aviso">Carregando…</div></div>
   if (!profile) return <Login />
   if (!ehEngenheiro(profile) && !ehMestre(profile)) return <Aguardando />
   return (

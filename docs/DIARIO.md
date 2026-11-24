@@ -49,3 +49,17 @@ Uma linha por item aprovado na página de testes: data · o que mudou · o que p
 - 23/11/2026 · Frentes · Mestre marca pronta e a frente vai para Para aprovar.
 - 23/11/2026 · Frentes · A tela funciona na largura de celular.
 - 23/11/2026 · Frentes · Só o botão Marcar como pronta leva para a aprovação (a opção saiu do formulário; frente aguardando não mostra Editar).
+- 23/11/2026 · Banco · Continua logado depois do F5 e ao reabrir.
+- 23/11/2026 · Banco · As duas obras de exemplo aparecem no banco, uma sem mostrar a outra.
+- 23/11/2026 · Banco · Nova frente fica gravada, sem repetir no clique duplo.
+- 23/11/2026 · Banco · Editar frente fica gravado.
+- 23/11/2026 · Banco · Contrato do empreiteiro fica gravado com o valor certo.
+- 23/11/2026 · Banco · Excluir frente limpa funciona; frente com registros é recusada com aviso.
+- 23/11/2026 · Banco · Conta nova entra bloqueada (Aguardando).
+- 23/11/2026 · Banco · Liberar Mestre só no Apto 501: ele só vê o 501 e nenhum R$.
+- 23/11/2026 · Banco · Desativar a conta tira o Mestre do app.
+- 23/11/2026 · Banco · Sem internet, o app avisa que não salvou.
+- 23/11/2026 · Banco · Mudar o próprio nome fica gravado; Sair desloga.
+- 23/11/2026 · Banco · Nova obra fica gravada; código repetido é recusado (depois do conserto da política de leitura de obras).
+- 23/11/2026 · Banco · Devolver e Aprovar ficam gravados.
+- 23/11/2026 · Banco · O Mestre marca pronta e a frente chega para o Engenheiro aprovar.

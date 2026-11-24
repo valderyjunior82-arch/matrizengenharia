@@ -1,8 +1,10 @@
-import { createContext, useContext, useState } from 'react'
-import { criarConta as criarContaDados, entrar as entrarDados, obterPerfil } from './dados.js'
+import { createContext, useContext, useEffect, useState } from 'react'
+import {
+  criarConta as criarContaDados, entrar as entrarDados, obterPerfil, retomarSessao, sairDaConta,
+} from './dados.js'
 
-// Quem está usando o app. No mock, email e senha são conferidos em dados.js;
-// na etapa do banco, isto passa a ouvir o login do Supabase.
+// Quem está usando o app. No banco, o login do Supabase guarda a sessão sozinho;
+// no mock, guardamos o id aqui (o mock não tem login de verdade).
 const SessaoCtx = createContext(null)
 const CHAVE = 'matriz:sessao'
 
@@ -17,10 +19,11 @@ function guardar(id) {
 }
 
 export function SessaoProvider({ children }) {
-  const [profile, setProfile] = useState(() => {
-    const id = lerGuardado()
-    return id ? obterPerfil(id) : null
-  })
+  const [estado, setEstado] = useState({ carregando: true, profile: null })
+  const setProfile = (profile) => setEstado({ carregando: false, profile })
+
+  // Reabriu o app: volta logado, se a sessão ainda vale e a conta segue ativa.
+  useEffect(() => { retomarSessao(lerGuardado()).then(setProfile) }, [])
 
   // Entrar e Criar conta devolvem { data, erro }: a tela mostra o erro.
   const comecar = async (pedido) => {
@@ -29,19 +32,28 @@ export function SessaoProvider({ children }) {
     return r
   }
 
+  const sair = async () => {
+    await sairDaConta()
+    guardar(null)
+    setProfile(null)
+  }
+
   const valor = {
-    profile,
+    profile: estado.profile,
+    carregando: estado.carregando,
     entrar: (valores) => comecar(entrarDados(valores)),
     criarConta: (valores) => comecar(criarContaDados(valores)),
     atualizarPerfil: setProfile,
     // Relê a conta: liberada, o App troca de tela sozinho; desativada, volta ao login.
-    // shortcut: no mock o perfil vive na memória desta aba, então só muda de verdade com o banco.
-    conferirConta: () => {
-      if (!profile) return
-      const p = obterPerfil(profile.id)
-      if (!p) { guardar(null); setProfile(null) } else if (p.role !== profile.role) setProfile(p)
+    // Falha de rede não desloga: só tenta de novo na próxima conferida.
+    conferirConta: async () => {
+      if (!estado.profile) return
+      let p
+      try { p = await obterPerfil(estado.profile.id) } catch (_e) { return }
+      if (!p) await sair()
+      else if (p.role !== estado.profile.role) setProfile(p)
     },
-    sair: () => { guardar(null); setProfile(null) },
+    sair,
   }
   return <SessaoCtx.Provider value={valor}>{children}</SessaoCtx.Provider>
 }

@@ -1,12 +1,12 @@
 import { hojeNoFuso } from './datas.js'
 
-// Chave Ãºnica que decide de onde vÃªm os dados.
+// Chave única que decide de onde vêm os dados.
 // true  = dados de exemplo embutidos (src/lib/mockData.js), sem banco.
-// false = Supabase (vira na etapa do banco; sÃ³ src/lib/dados.js muda).
-export const USAR_MOCK = true
+// false = Supabase (src/lib/dadosBanco.js).
+export const USAR_MOCK = false
 
 // Os dados de exemplo do PRD foram escritos com "hoje" = segunda, 23/11/2026.
-// No mock o relÃ³gio fica parado nesse dia, para as cores e os prazos baterem.
+// No mock o relógio fica parado nesse dia, para as cores e os prazos baterem.
 export const HOJE_MOCK = '2026-11-23'
 
 export function hoje() {

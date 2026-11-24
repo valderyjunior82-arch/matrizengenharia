@@ -4,7 +4,7 @@ import { camposDaFrente, diasSemAndar, podeEditarFrente, frenteTemRegistros, fre
 import { materiaisParaChegar } from '../src/lib/materiais.js'
 import { mockContratos, mockFotos, mockFrentes, mockLancamentos, mockMateriais, mockRegistros } from '../src/lib/mockData.js'
 import { CAMPOS_FRENTE, validar } from '../src/lib/formularios.js'
-import * as dados from '../src/lib/dados.js'
+import * as dados from '../src/lib/dadosMock.js'
 
 let ok = 0
 let tot = 0

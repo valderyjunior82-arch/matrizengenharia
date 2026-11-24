@@ -1,7 +1,7 @@
 // Login e pessoas: regras puras (lib/pessoas.js) e o fluxo pela camada de dados (mock).
 import { emailEmUso, erroDeAcesso, obrasDoAcesso, papelDaNovaConta, podeGerenciar } from '../src/lib/pessoas.js'
 import { CAMPOS_CRIAR_CONTA, validar } from '../src/lib/formularios.js'
-import * as dados from '../src/lib/dados.js'
+import * as dados from '../src/lib/dadosMock.js'
 import { SENHA_DE_TESTE } from '../src/lib/mockData.js'
 
 let ok = 0
@@ -60,7 +60,7 @@ conferir('Mestre liberado vê só a obra marcada', obrasAna, ['o2'])
 
 await dados.definirAtivo(eng, id, false)
 conferir('desativada não entra', (await dados.entrar({ email: 'ana@exemplo.com', senha: '12345678' })).erro, 'Esta conta foi desativada. Fale com o engenheiro.')
-conferir('sessão lembrada de desativada volta ao login', dados.obterPerfil(id), null)
+conferir('sessão lembrada de desativada volta ao login', await dados.obterPerfil(id), null)
 conferir('Engenheiro não se desativa', !!(await dados.definirAtivo(eng, 'p1', false)).erro, true)
 
 await dados.salvarAcesso(eng, 'p2', { role: 'Engenheiro', obraIds: [] })
