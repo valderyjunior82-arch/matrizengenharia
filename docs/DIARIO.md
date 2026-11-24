@@ -78,3 +78,5 @@ Uma linha por item aprovado na página de testes: data · o que mudou · o que p
 - 24/11/2026 · Materiais · O Mestre marca entregue só o que foi aprovado.
 - 24/11/2026 · Materiais · O Engenheiro cadastra de qualquer aba, edita e exclui; material com nota não se exclui e a tela diz por quê.
 - 24/11/2026 · Materiais · Uma obra não mostra os materiais da outra; sem internet avisa que não salvou.
+- 24/11/2026 · Materiais · Pedido do Mestre aparece no painel Hoje seja qual for a data; compra além de 7 dias continua fora (achado da revisão).
+- 24/11/2026 · Materiais · Editar um pedido não mostra Situação e ele continua aguardando; a lista de Situação não oferece "Aguardando aprovação"; rodapé do painel diz "N aguardando".
