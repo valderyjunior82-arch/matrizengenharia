@@ -21,7 +21,7 @@ import { ehEngenheiro, ehMestre, podeEditarRegistro } from './permissoes.js'
 import { MSG_SEM_PERMISSAO, traduzirErro } from './errosBanco.js'
 import { caminhoFoto, camposDoRegistro } from './diario.js'
 import { camposDoMaterial, erroAoMudarSituacao } from './materiais.js'
-import { camposDaNota, camposDaParcela, camposDoMovimento, camposDoRecebimento } from './financeiro.js'
+import { camposDaNota, camposDaParcela, camposDoMovimento, camposDoRecebimento, erroValorDoContrato, pagoDoContrato } from './financeiro.js'
 import { camposDoFornecedor, fornecedoresDe, juntarFornecedores } from './fornecedores.js'
 
 let obraAtualId = null
@@ -372,16 +372,32 @@ export const mudarSituacaoMaterial = (quem, id, situacao) => responder(async () 
 export const listarContratos = () => responder(() => daObraAtual('contratos_empreiteiros'))
 export const listarLancamentos = () => responder(() => daObraAtual('lancamentos'))
 
-// Um contrato por frente (é dele que sai o "falta pagar" do empreiteiro).
-export const salvarContrato = (quem, frenteId, valores) => responder(async () => {
+// Um contrato por frente (é dele que sai o "falta pagar" do empreiteiro). Com `id`, edita.
+export const salvarContrato = (quem, frenteId, valores, id) => responder(async () => {
   exigirEngenheiro(quem, 'cadastra contratos')
   if (Object.keys(validar(CAMPOS_CONTRATO, valores)).length) throw new Error('Confira os campos marcados.')
-  const f = await frenteDaObra(frenteId)
-  return ok(await banco().from('contratos_empreiteiros').insert({
-    obra_id: f.obra_id, frente_id: f.id,
+  const campos = {
     empreiteiro: valores.empreiteiro.trim(), valor_contratado: paraDinheiro(valores.valor_contratado),
     observacao: String(valores.observacao ?? '').trim() || null,
-  }).select().single())
+  }
+  if (id) {
+    const notas = ok(await banco().from('lancamentos').select('contrato_empreiteiro_id, tipo, situacao, valor').eq('contrato_empreiteiro_id', id).eq('obra_id', exigirObra()))
+    const erro = erroValorDoContrato(campos.valor_contratado, pagoDoContrato(id, notas))
+    if (erro) throw new Error(erro)
+    const salvo = ok(await banco().from('contratos_empreiteiros').update(campos).eq('id', id).eq('obra_id', exigirObra()).select())
+    if (!salvo.length) throw new Error('Este contrato não é da obra escolhida.')
+    return salvo[0]
+  }
+  const f = await frenteDaObra(frenteId)
+  return ok(await banco().from('contratos_empreiteiros').insert({ obra_id: f.obra_id, frente_id: f.id, ...campos }).select().single())
+})
+
+export const excluirContrato = (quem, id) => responder(async () => {
+  exigirEngenheiro(quem, 'exclui contratos')
+  // Contrato com nota ligada: a chave estrangeira recusa (errosBanco traduz).
+  const apagados = ok(await banco().from('contratos_empreiteiros').delete().eq('id', id).eq('obra_id', exigirObra()).select('id'))
+  if (!apagados.length) throw new Error('Este contrato não é da obra escolhida.')
+  return { id }
 })
 
 export const marcarParcelaRecebida = (id, valores) => responder(async () => {

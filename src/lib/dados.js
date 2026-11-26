@@ -20,7 +20,7 @@ export const {
   listarObras, salvarObra, excluirObra, adicionarNaObra, removerDaObra,
   listarFrentes, obterFrente, salvarFrente, excluirFrente, aprovarFrente, devolverFrente, marcarFrentePronta,
   listarRegistros, listarFotos, salvarRegistro, excluirRegistro, listarMateriais, salvarMaterial, excluirMaterial, mudarSituacaoMaterial,
-  listarContratos, listarLancamentos, salvarContrato, marcarParcelaRecebida,
+  listarContratos, listarLancamentos, salvarContrato, excluirContrato, marcarParcelaRecebida,
   obterLancamento, salvarLancamento, salvarParcela, excluirLancamento, linkComprovante, listarFornecedores, salvarFornecedor, excluirFornecedor,
   listarCaixaGeral, salvarMovimentoBanco, excluirMovimentoBanco, listarPessoas, salvarAcesso, definirAtivo, salvarMeuNome,
 } = d

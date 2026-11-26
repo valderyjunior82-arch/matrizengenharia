@@ -104,10 +104,11 @@ export const CAMPOS_NOTA = [
   // Frente, material e contrato somem quando a lista está vazia (ex.: "Empresa (sem obra)").
   { nome: 'frente_id', rotulo: 'Frente', tipo: 'lista', opcoesDe: 'frentes' },
   { nome: 'material_id', rotulo: 'Material', tipo: 'lista', opcoesDe: 'materiais' },
-  { nome: 'contrato_empreiteiro_id', rotulo: 'Contrato de empreiteiro', tipo: 'lista', opcoesDe: 'contratos' },
+  { nome: 'contrato_empreiteiro_id', rotulo: 'Contrato de empreiteiro', tipo: 'lista', opcoesDe: 'contratos', visivel: ehSaida },
   { nome: 'pago_por', rotulo: 'Pago por', tipo: 'lista', opcoes: PAGO_POR, obrigatorio: true, padrao: 'Engenheiro', visivel: ehSaida },
-  // Nota paga pelo Cliente não passou pelo seu caixa: sem banco.
-  { nome: 'banco', rotulo: 'Banco', tipo: 'lista', opcoes: BANCOS, obrigatorio: true, visivel: (v) => !ehSaida(v) || v.pago_por !== 'Cliente' },
+  // Nota paga pelo Cliente não passou pelo seu caixa: sem banco. Parcela ainda não recebida também não (ganha banco ao receber).
+  { nome: 'banco', rotulo: 'Banco', tipo: 'lista', opcoes: BANCOS, obrigatorio: true,
+    visivel: (v) => v.situacao !== 'Previsto' && (!ehSaida(v) || v.pago_por !== 'Cliente') },
   { nome: 'forma_pagamento', rotulo: 'Forma de pagamento', tipo: 'lista', opcoes: FORMAS_PAGAMENTO },
   { nome: 'descricao', rotulo: 'Descrição', tipo: 'texto', inteiro: true },
 ]

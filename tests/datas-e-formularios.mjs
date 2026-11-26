@@ -38,6 +38,8 @@ conferir('entrada não cobra "pago por"', validar(CAMPOS_NOTA, { ...nota, tipo: 
 conferir('marcar recebida sem forma e sem banco é recusado', Object.keys(validar(CAMPOS_RECEBIMENTO, { data: '2026-11-23' })), ['forma_pagamento', 'banco'])
 conferir('marcar recebida com data, Pix e banco passa', validar(CAMPOS_RECEBIMENTO, { data: '2026-11-23', forma_pagamento: 'Pix', banco: 'Inter' }), {})
 conferir('saída do engenheiro sem banco é recusada', validar(CAMPOS_NOTA, { ...nota, valor: '10', banco: '' }).banco, 'Preencha este campo.')
+conferir('parcela ainda não recebida não cobra banco (achado 25/11)',
+  validar(CAMPOS_NOTA, { ...nota, tipo: 'Entrada', categoria: 'Recebimento do cliente', valor: '10', banco: '', situacao: 'Previsto' }), {})
 conferir('saída paga pelo cliente não cobra banco', validar(CAMPOS_NOTA, { ...nota, valor: '10', pago_por: 'Cliente', banco: '' }), {})
 
 conferir('avanço sem frente é recusado', Object.keys(validar(camposDiario('Avanço'), { texto: 'Rodapé' })), ['frente_id'])

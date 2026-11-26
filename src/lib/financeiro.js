@@ -3,6 +3,7 @@
 import { somarDias, segundaDaSemana } from './datas.js'
 import { BANCOS, CONTAS_ENTRADA, CONTAS_SAIDA, TIPOS_LANCAMENTO } from './vocabulario.js'
 import { paraDinheiro } from './formularios.js'
+import { brl } from './formato.js'
 
 const centavos = (v) => Math.round(Number(v) * 100)
 const soma = (lista) => lista.reduce((s, l) => s + centavos(l.valor), 0) / 100
@@ -29,8 +30,18 @@ export function resumoObra(lancamentos, hoje) {
   }
 }
 
-export function pagoDoContrato(contratoId, lancamentos) {
-  return soma(lancamentos.filter((l) => l.contrato_empreiteiro_id === contratoId && ehSaidaRealizada(l)))
+// Pagamento do empreiteiro = Saída realizada ligada ao contrato. A lista da aba Contrato e o "já pago" usam a mesma regra.
+export const pagamentosDoContrato = (contratoId, lancamentos) =>
+  lancamentos.filter((l) => l.contrato_empreiteiro_id === contratoId && ehSaidaRealizada(l))
+
+export const pagoDoContrato = (contratoId, lancamentos) => soma(pagamentosDoContrato(contratoId, lancamentos))
+
+// Contrato com nota ligada (paga ou prevista) não se apaga: a nota perderia o empreiteiro.
+export const MSG_CONTRATO_COM_PAGAMENTO = 'Este contrato já tem pagamentos lançados. Exclua os pagamentos antes, ou só edite o contrato.'
+
+// Editar o contrato: o valor não pode ficar abaixo do que já foi pago (decisão de 25/11: recusar com aviso).
+export function erroValorDoContrato(valor, pago) {
+  return centavos(valor) < centavos(pago) ? `O valor não pode ser menor que o já pago (${brl(pago)}).` : null
 }
 
 export function parcelasDoCliente(lancamentos) {
@@ -118,8 +129,11 @@ export function camposDaNota(valores, obraAtualId, anterior = null) {
       banco: temBanco && BANCOS.includes(valores.banco) ? valores.banco : null,
       frente_id: daObra ? texto(valores.frente_id) : null,
       material_id: daObra ? texto(valores.material_id) : null,
-      contrato_empreiteiro_id: daObra ? texto(valores.contrato_empreiteiro_id) : null,
+      // Contrato de empreiteiro só em Saída: é pagamento dele.
+      contrato_empreiteiro_id: daObra && tipo === 'Saída' ? texto(valores.contrato_empreiteiro_id) : null,
       situacao,
+      // Parcela ainda não recebida: a data É o vencimento (como em camposDaParcela).
+      ...(situacao === 'Previsto' && { vencimento: valores.data }),
     },
   }
 }

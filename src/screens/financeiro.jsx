@@ -148,8 +148,10 @@ export default function Financeiro({ goto, params = {}, profile }) {
           return (
             <div key={p.id} className={`li ${sit === 'Vencida' ? 'critico' : ''}`}>
               <div className="b">
-                <div className="t">{p.descricao}</div>
-                <div className="m">{sit === 'Recebida' ? `recebida ${dataCompleta(p.data)}` : `vence ${dataCompleta(p.vencimento)}`}</div>
+                <button className="tocar" onClick={() => abrir(p)}>
+                  <div className="t">{p.descricao}</div>
+                  <div className="m">{sit === 'Recebida' ? `recebida ${dataCompleta(p.data)}` : `vence ${dataCompleta(p.vencimento)}`}</div>
+                </button>
                 {sit !== 'Recebida' && <div style={{ marginTop: 10 }}><button className="btn sec" onClick={() => setRecebendo(p)}>Marcar recebida</button></div>}
               </div>
               <div className="r"><span className="valor">{brl(p.valor)}</span><Chip nivel={NIVEL_PARCELA[sit]}>{sit}</Chip></div>

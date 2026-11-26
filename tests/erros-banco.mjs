@@ -24,6 +24,9 @@ conferir('segundo contrato na frente',
 conferir('apagar obra com frente',
   traduzirErro({ code: '23503', message: 'update or delete on table "obras" violates foreign key constraint "frentes_obra_id_fkey" on table "frentes"' }),
   MSG_OBRA_COM_REGISTROS)
+conferir('apagar contrato com pagamento',
+  traduzirErro({ code: '23503', message: 'update or delete on table "contratos_empreiteiros" violates foreign key constraint "lancamentos_contrato_empreiteiro_id_obra_id_fkey" on table "lancamentos"' }),
+  'Este contrato já tem pagamentos lançados. Exclua os pagamentos antes, ou só edite o contrato.')
 conferir('apagar frente com contrato',
   traduzirErro({ code: '23503', message: 'update or delete on table "frentes" violates foreign key constraint "contratos_empreiteiros_frente_id_obra_id_fkey" on table "contratos_empreiteiros"' }),
   MSG_FRENTE_COM_REGISTROS)

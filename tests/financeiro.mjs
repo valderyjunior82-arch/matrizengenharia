@@ -1,7 +1,7 @@
 // Contas do financeiro, com os lançamentos de exemplo ("hoje" = 23/11/2026).
 import {
   caixaGeral, camposDaNota, gastoPorConta, camposDaParcela, camposDoMovimento, camposDoRecebimento, saldosPorBanco, dre, filtrarLancamentos, fluxoDeCaixa, pagoDoContrato, resumoObra,
-  situacaoParcela, ultimosMeses,
+  situacaoParcela, ultimosMeses, MSG_CONTRATO_COM_PAGAMENTO, erroValorDoContrato, pagamentosDoContrato,
 } from '../src/lib/financeiro.js'
 import { fornecedoresDe, juntarFornecedores, nomeEmUso, camposDoFornecedor } from '../src/lib/fornecedores.js'
 import { mockLancamentos, mockObras, mockProfiles } from '../src/lib/mockData.js'
@@ -161,6 +161,33 @@ conferir('excluir o cadastro não some com o nome das notas', (await mock.listar
 conferir('nota da Empresa se exclui', (await mock.excluirLancamento(eng, 'l14')).erro, null)
 // Achado da revisão de 25/11: nota já excluída dizia "não é da obra escolhida".
 conferir('nota já excluída diz que não existe mais', (await mock.obterLancamento('l14')).erro, 'Este lançamento não existe mais nesta obra.')
+
+// Contrato do empreiteiro: editar e excluir (25/11).
+mock.definirObraAtual('o2')
+const contrato = { empreiteiro: 'Gesso Forte', valor_contratado: '20.000', observacao: '' }
+conferir('Apto 501 não edita contrato do Apto 1802', (await mock.salvarContrato(eng, 'f2', contrato, 'c2')).erro, 'Este contrato não é da obra escolhida.')
+conferir('Apto 501 não exclui contrato do Apto 1802', (await mock.excluirContrato(eng, 'c2')).erro, 'Este contrato não é da obra escolhida.')
+mock.definirObraAtual('o1')
+conferir('Mestre não exclui contrato', (await mock.excluirContrato(mestre, 'c7')).erro, 'Só o Engenheiro exclui contratos.')
+conferir('editar contrato grava o valor novo', (await mock.salvarContrato(eng, 'f2', contrato, 'c2')).data?.valor_contratado, 20000)
+conferir('editar não cria segundo contrato', (await mock.listarContratos()).data.filter((c) => c.frente_id === 'f2').length, 1)
+conferir('contrato com pagamento não se exclui', (await mock.excluirContrato(eng, 'c2')).erro, MSG_CONTRATO_COM_PAGAMENTO)
+conferir('contrato sem pagamento se exclui', (await mock.excluirContrato(eng, 'c7')).erro, null)
+conferir('contrato abaixo do já pago é recusado (achado 25/11)', (await mock.salvarContrato(eng, 'f2', { ...contrato, valor_contratado: '900' }, 'c2')).erro, 'O valor não pode ser menor que o já pago (R$ 9.000,00).')
+conferir('contrato igual ao já pago passa', (await mock.salvarContrato(eng, 'f2', { ...contrato, valor_contratado: '9.000' }, 'c2')).erro, null)
+conferir('contrato excluído sai da lista', (await mock.listarContratos()).data.some((c) => c.id === 'c7'), false)
+
+// Achados da revisão de 25/11 (parcelas e contratos).
+const parcelaPrevista = { obra_id: 'o1', situacao: 'Previsto' }
+const editarParcela = { tipo: 'Entrada', categoria: 'Recebimento do cliente', valor: '12.000', data: '2026-12-10', descricao: 'Quinzena 4' }
+conferir('editar a data da parcela muda o vencimento', camposDaNota(editarParcela, 'o1', parcelaPrevista).campos.vencimento, '2026-12-10')
+conferir('parcela editada continua prevista e sem banco', camposDaNota({ ...editarParcela, banco: '' }, 'o1', parcelaPrevista).campos.situacao, 'Previsto')
+conferir('nota realizada não mexe no vencimento', 'vencimento' in camposDaNota(nota, 'o1').campos, false)
+conferir('entrada não se liga a contrato', camposDaNota({ ...editarParcela, contrato_empreiteiro_id: 'c2' }, 'o1', parcelaPrevista).campos.contrato_empreiteiro_id, null)
+conferir('saída continua ligada ao contrato', camposDaNota({ ...nota, contrato_empreiteiro_id: 'c2' }, 'o1').campos.contrato_empreiteiro_id, 'c2')
+conferir('pagamentos do contrato = só saídas realizadas', pagamentosDoContrato('c2', [...mockLancamentos, { id: 'x', tipo: 'Entrada', situacao: 'Realizado', valor: 1, contrato_empreiteiro_id: 'c2' }]).map((l) => l.id).sort(), ['l10', 'l12'])
+conferir('valor do contrato abaixo do pago dá erro', erroValorDoContrato(8999.99, 9000), 'O valor não pode ser menor que o já pago (R$ 9.000,00).')
+conferir('valor do contrato igual ao pago passa', erroValorDoContrato(9000, 9000), null)
 
 console.log(`${ok}/${tot} — financeiro`)
 process.exit(ok === tot ? 0 : 1)

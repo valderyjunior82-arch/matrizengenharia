@@ -13,7 +13,7 @@ import { codigoEmUso, erroAoRemover, MSG_OBRA_COM_REGISTROS, obraTemRegistros, p
 import { ehEngenheiro, ehMestre, podeEditarRegistro } from './permissoes.js'
 import { caminhoFoto, camposDoRegistro, frenteAposAvanco, mexeNaFrente } from './diario.js'
 import { camposDoMaterial, erroAoMudarSituacao, materialTemNota, MSG_MATERIAL_COM_NOTA } from './materiais.js'
-import { camposDaNota, camposDaParcela, camposDoMovimento, camposDoRecebimento } from './financeiro.js'
+import { camposDaNota, camposDaParcela, camposDoMovimento, camposDoRecebimento, erroValorDoContrato, MSG_CONTRATO_COM_PAGAMENTO, pagoDoContrato } from './financeiro.js'
 import { camposDoFornecedor, fornecedoresDe, juntarFornecedores, MSG_NOME_EM_USO, nomeEmUso } from './fornecedores.js'
 import {
   mockProfiles, mockSenhas, SENHA_DE_TESTE, mockObras, mockMembros, mockFrentes, mockContratos,
@@ -296,19 +296,40 @@ export const mudarSituacaoMaterial = (quem, id, situacao) => responder(() => {
 export const listarContratos = () => responder(() => daObra(db.contratos, exigirObra()))
 export const listarLancamentos = () => responder(() => daObra(db.lancamentos, exigirObra()))
 
-// Um contrato por frente (é dele que sai o "falta pagar" do empreiteiro).
-export const salvarContrato = (quem, frenteId, valores) => responder(() => {
+// Um contrato por frente (é dele que sai o "falta pagar" do empreiteiro). Com `id`, edita.
+function contratoDaObra(id) {
+  const c = daObra(db.contratos, exigirObra()).find((x) => x.id === id)
+  if (!c) throw new Error('Este contrato não é da obra escolhida.')
+  return c
+}
+
+export const salvarContrato = (quem, frenteId, valores, id) => responder(() => {
   exigirEngenheiro(quem, 'cadastra contratos')
   if (Object.keys(validar(CAMPOS_CONTRATO, valores)).length) throw new Error('Confira os campos marcados.')
-  const f = frenteDaObra(frenteId)
-  if (db.contratos.some((c) => c.frente_id === f.id)) throw new Error('Esta frente já tem contrato.')
-  const c = {
-    id: crypto.randomUUID(), obra_id: f.obra_id, frente_id: f.id,
+  const campos = {
     empreiteiro: valores.empreiteiro.trim(), valor_contratado: paraDinheiro(valores.valor_contratado),
     observacao: String(valores.observacao ?? '').trim() || null,
   }
+  if (id) {
+    const c = contratoDaObra(id)
+    const erro = erroValorDoContrato(campos.valor_contratado, pagoDoContrato(id, db.lancamentos))
+    if (erro) throw new Error(erro)
+    return Object.assign(c, campos)
+  }
+  const f = frenteDaObra(frenteId)
+  if (db.contratos.some((c) => c.frente_id === f.id)) throw new Error('Esta frente já tem contrato.')
+  const c = { id: crypto.randomUUID(), obra_id: f.obra_id, frente_id: f.id, ...campos }
   db.contratos.push(c)
   return c
+})
+
+export const excluirContrato = (quem, id) => responder(() => {
+  exigirEngenheiro(quem, 'exclui contratos')
+  contratoDaObra(id)
+  // No banco, a chave estrangeira das notas recusa do mesmo jeito.
+  if (db.lancamentos.some((l) => l.contrato_empreiteiro_id === id)) throw new Error(MSG_CONTRATO_COM_PAGAMENTO)
+  db.contratos = db.contratos.filter((c) => c.id !== id)
+  return { id }
 })
 
 export const marcarParcelaRecebida = (id, valores) => responder(() => {

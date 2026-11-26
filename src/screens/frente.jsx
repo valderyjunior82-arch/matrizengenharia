@@ -3,12 +3,12 @@
 import { useState } from 'react'
 import { hoje as hojeDe } from '../lib/config.js'
 import {
-  aprovarFrente, devolverFrente, excluirFrente, listarContratos, listarFotos, listarLancamentos,
+  aprovarFrente, devolverFrente, excluirContrato, excluirFrente, listarContratos, listarFotos, listarLancamentos,
   listarFrentes, listarMateriais, listarRegistros, marcarFrentePronta, obterFrente, salvarContrato, salvarFrente,
 } from '../lib/dados.js'
 import { useCarregar, juntar } from '../lib/usarDados.js'
 import { ambientesDe, diasSemAndar, nivelFrente, podeEditarFrente, podeMarcarPronta, textoLimite } from '../lib/frentes.js'
-import { pagoDoContrato } from '../lib/financeiro.js'
+import { pagamentosDoContrato, pagoDoContrato } from '../lib/financeiro.js'
 import { CAMPOS_CONTRATO, CAMPOS_FRENTE } from '../lib/formularios.js'
 import { ehEngenheiro } from '../lib/permissoes.js'
 import { brl, dataCompleta, diaRelativo } from '../lib/formato.js'
@@ -21,7 +21,7 @@ export default function Frente({ goto, voltar: volta, params, profile }) {
   const hoje = hojeDe()
   const engenheiro = ehEngenheiro(profile)
   const [aba, setAba] = useState('avanco')
-  const [folha, setFolha] = useState(null) // 'editar' | 'devolver' | 'pronta' | 'contrato' | 'excluir'
+  const [folha, setFolha] = useState(null) // 'editar' | 'devolver' | 'pronta' | 'contrato' | 'excluir' | 'excluirContrato'
   const [enviando, setEnviando] = useState(false)
   const { carregando, erro, data, recarregar } = useCarregar(() => juntar({
     frente: obterFrente(params.id),
@@ -60,6 +60,15 @@ export default function Frente({ goto, voltar: volta, params, profile }) {
     recarregar()
   }
 
+  const apagarContrato = async () => {
+    setEnviando(true)
+    const { erro: e } = await excluirContrato(profile, contrato.id)
+    setEnviando(false)
+    setFolha(null)
+    avisar(e || 'Contrato excluído.')
+    recarregar()
+  }
+
   const excluir = async () => {
     setEnviando(true)
     const { erro: e } = await excluirFrente(profile, f.id)
@@ -88,7 +97,7 @@ export default function Frente({ goto, voltar: volta, params, profile }) {
       : <Vazio icone="materiais" titulo="Nenhum material ligado a esta frente." />
   } else if (contrato) {
     const pago = pagoDoContrato(contrato.id, data.lancamentos)
-    const pagamentos = data.lancamentos.filter((l) => l.contrato_empreiteiro_id === contrato.id && l.situacao === 'Realizado')
+    const pagamentos = pagamentosDoContrato(contrato.id, data.lancamentos)
     corpo = (
       <>
         <div className="fin">
@@ -98,13 +107,16 @@ export default function Frente({ goto, voltar: volta, params, profile }) {
           <div><div className="rotulo">Falta pagar</div><div className="v">{brl(contrato.valor_contratado - pago)}</div></div>
         </div>
         {pagamentos.map((l) => (
-          <div key={l.id} className="li" style={{ minHeight: 56 }}>
+          <button key={l.id} className="li" style={{ minHeight: 56 }} onClick={() => goto('lancarNota', { id: l.id })}>
             <div className="b"><div className="t">{l.descricao}</div><div className="m">{dataCompleta(l.data)} · {l.forma_pagamento || '—'}</div></div>
             <span className="valor">{brl(l.valor)}</span>
-          </div>
+          </button>
         ))}
-        <div className="acoes um">
-          <button className="btn pri" onClick={() => goto('lancarNota', { categoria: 'Mão de obra', frente_id: f.id, fornecedor: contrato.empreiteiro, contrato_empreiteiro_id: contrato.id })}>Registrar pagamento</button>
+        {contrato.observacao && <div className="aviso">{contrato.observacao}</div>}
+        <div className="acoes">
+          <button className="btn pri" style={{ gridColumn: '1 / -1' }} onClick={() => goto('lancarNota', { categoria: 'Mão de obra', frente_id: f.id, fornecedor: contrato.empreiteiro, contrato_empreiteiro_id: contrato.id })}>Registrar pagamento</button>
+          <button className="btn sec" onClick={() => setFolha('contrato')}>Editar contrato</button>
+          <button className="btn sec" onClick={() => setFolha('excluirContrato')}>Excluir contrato</button>
         </div>
       </>
     )
@@ -174,9 +186,23 @@ export default function Frente({ goto, voltar: volta, params, profile }) {
         </Folha>
       )}
       {folha === 'contrato' && (
-        <Folha titulo="Cadastrar contrato" onFechar={() => setFolha(null)}>
-          <Formulario campos={CAMPOS_CONTRATO} rotuloSalvar="Cadastrar contrato" onCancelar={() => setFolha(null)}
-            onSalvar={(v) => gravar(salvarContrato(profile, f.id, v), 'Contrato cadastrado.')} />
+        <Folha titulo={contrato ? 'Editar contrato' : 'Cadastrar contrato'} onFechar={() => setFolha(null)}>
+          {contrato
+            ? <Formulario campos={CAMPOS_CONTRATO} inicial={{ ...contrato, valor_contratado: String(contrato.valor_contratado).replace('.', ',') }}
+                onCancelar={() => setFolha(null)} onSalvar={(v) => gravar(salvarContrato(profile, f.id, v, contrato.id), 'Contrato salvo.')} />
+            : <Formulario campos={CAMPOS_CONTRATO} rotuloSalvar="Cadastrar contrato" onCancelar={() => setFolha(null)}
+                onSalvar={(v) => gravar(salvarContrato(profile, f.id, v), 'Contrato cadastrado.')} />}
+        </Folha>
+      )}
+      {folha === 'excluirContrato' && (
+        <Folha titulo="Excluir contrato" onFechar={() => setFolha(null)}>
+          <div className="form">
+            <p style={{ fontSize: 17 }}>Excluir o contrato com <b>{contrato.empreiteiro}</b>? Não dá para desfazer.</p>
+            <div className="acoes" style={{ padding: 0 }}>
+              <button className="btn sec" disabled={enviando} onClick={() => setFolha(null)}>Não excluir</button>
+              <button className="btn perigo" disabled={enviando} onClick={apagarContrato}>{enviando ? 'Excluindo…' : 'Sim, excluir'}</button>
+            </div>
+          </div>
         </Folha>
       )}
       {folha === 'excluir' && (

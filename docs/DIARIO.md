@@ -97,3 +97,6 @@ Uma linha por item aprovado na página de testes: data · o que mudou · o que p
 - 25/11/2026 · Revisão · Nota da Empresa abre pelo Caixa geral, edita (fica gravada após F5) e exclui.
 - 25/11/2026 · Revisão · Quantidade "1.5" continua 1,5; valor "1.500" vira R$ 1.500,00.
 - 25/11/2026 · Cadastros · Fornecedor se cadastra, edita e exclui; nome repetido é recusado; "Sem cadastro" se completa; o Mestre não vê.
+- 25/11/2026 · Parcelas · Tocar numa parcela abre o lançamento dela.
+- 25/11/2026 · Contrato do empreiteiro · Tocar num pagamento abre o lançamento; editar o contrato fica gravado após F5; com pagamento não se exclui; sem pagamento se exclui.
+- 25/11/2026 · Revisão · Corrigir a data de uma parcela muda o vencimento e não pede banco; parcela e entrada não se ligam a contrato; contrato não aceita valor menor que o já pago.

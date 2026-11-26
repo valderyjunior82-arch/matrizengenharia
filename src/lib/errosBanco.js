@@ -4,6 +4,7 @@ import { MSG_FRENTE_COM_REGISTROS, MSG_FRENTE_DE_OUTRA_OBRA } from './frentes.js
 import { MSG_OBRA_COM_REGISTROS } from './obras.js'
 import { MSG_MATERIAL_COM_NOTA } from './materiais.js'
 import { MSG_NOME_EM_USO } from './fornecedores.js'
+import { MSG_CONTRATO_COM_PAGAMENTO } from './financeiro.js'
 
 export const MSG_SEM_REDE = 'Sem conexão com a internet. Nada foi salvo: confira a rede e tente de novo.'
 export const MSG_SEM_PERMISSAO = 'Sua conta não tem permissão para isso.'
@@ -18,7 +19,8 @@ const UNICOS = {
 }
 
 // Chave estrangeira impedindo apagar (23503) → depende de quem estava sendo apagado.
-const APAGAR = { obras: MSG_OBRA_COM_REGISTROS, frentes: MSG_FRENTE_COM_REGISTROS, materiais: MSG_MATERIAL_COM_NOTA }
+const APAGAR = { obras: MSG_OBRA_COM_REGISTROS, frentes: MSG_FRENTE_COM_REGISTROS, materiais: MSG_MATERIAL_COM_NOTA,
+  contratos_empreiteiros: MSG_CONTRATO_COM_PAGAMENTO }
 
 export function traduzirErro(e) {
   if (!e) return null
