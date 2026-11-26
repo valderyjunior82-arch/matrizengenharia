@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { hoje as hojeDe } from '../lib/config.js'
 import { excluirMaterial, listarFrentes, listarMateriais, mudarSituacaoMaterial, salvarMaterial } from '../lib/dados.js'
 import { useCarregar, juntar } from '../lib/usarDados.js'
-import { acoesDoMaterial, camposDoFormulario, materiaisNaSituacao, PEDIDO } from '../lib/materiais.js'
+import { abaInicialMateriais, acoesDoMaterial, camposDoFormulario, materiaisNaSituacao, PEDIDO } from '../lib/materiais.js'
 import { SITUACOES_MATERIAL } from '../lib/vocabulario.js'
 import { ehEngenheiro } from '../lib/permissoes.js'
 import { plural } from '../lib/formato.js'
@@ -15,10 +15,10 @@ import { LinhaMaterial } from '../components/pecas.jsx'
 
 const ROTULO_ABA = { [PEDIDO]: 'Aguardando' }
 
-export default function Materiais({ goto, profile }) {
+export default function Materiais({ goto, params = {}, profile }) {
   const hoje = hojeDe()
   const engenheiro = ehEngenheiro(profile)
-  const [aba, setAba] = useState('A comprar')
+  const [abaEscolhida, setAba] = useState(params.aba ?? null)
   // { tipo: 'novo' | 'editar' | 'entregue' | 'recusar' | 'excluir', m? }
   const [folha, setFolha] = useState(null)
   const [enviando, setEnviando] = useState(false)
@@ -29,6 +29,7 @@ export default function Materiais({ goto, profile }) {
 
   const { materiais, frentes } = data
   const frenteDe = (id) => frentes.find((f) => f.id === id)
+  const aba = abaInicialMateriais(materiais, abaEscolhida)
   const lista = materiaisNaSituacao(materiais, aba)
   const listas = { frentes: frentes.map((f) => ({ valor: f.id, rotulo: `${f.servico} · ${f.ambiente}` })) }
   const fechar = () => setFolha(null)

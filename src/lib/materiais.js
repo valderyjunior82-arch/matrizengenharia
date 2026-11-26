@@ -70,6 +70,12 @@ export function materiaisParaChegar(materiais, hoje, janela = JANELA_MATERIAL_DI
     .sort(porData)
 }
 
+// Aba em que Materiais abre: a pedida (tocou num material do painel); senão, Aguardando quando houver pedido pendente.
+export function abaInicialMateriais(materiais, pedida) {
+  if (pedida) return pedida
+  return materiais.some((m) => m.situacao === PEDIDO) ? PEDIDO : 'A comprar'
+}
+
 export function materiaisNaSituacao(materiais, situacao) {
   return materiais.filter((m) => m.situacao === situacao).sort(porData)
 }

@@ -6,7 +6,8 @@ import { Carregando, ErroCarga, Vazio } from '../components/index.jsx'
 import { Shell } from '../components/Shell.jsx'
 
 // Telas presas a um item da obra: ao trocar de obra, voltam para a lista.
-const AO_TROCAR_OBRA = { frente: 'frentes', dia: 'diario', lancarDiario: 'diario', lancarNota: 'financeiro' }
+// Materiais volta para si mesma sem a aba que veio do painel (era de um material da obra anterior).
+const AO_TROCAR_OBRA = { frente: 'frentes', dia: 'diario', lancarDiario: 'diario', lancarNota: 'financeiro', materiais: 'materiais' }
 // Qual item do menu fica aceso em cada tela.
 const MENU_DA_TELA = { frente: 'frentes', dia: 'diario', lancarDiario: 'diario', lancarNota: 'financeiro' }
 // Telas que funcionam mesmo sem nenhuma obra cadastrada.

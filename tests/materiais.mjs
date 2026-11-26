@@ -1,6 +1,6 @@
 // Materiais: o Mestre pede (só vira compra quando o Engenheiro aprova), o Engenheiro cadastra,
 // edita, exclui e aprova; material com nota não se exclui. Roda pela camada de dados do mock.
-import { acoesDoMaterial, camposDoFormulario, camposDoMaterial, materiaisParaChegar, resumoParaChegar, erroAoMudarSituacao, MSG_MATERIAL_COM_NOTA, MSG_PEDIDO_NAO_APROVADO, PEDIDO } from '../src/lib/materiais.js'
+import { abaInicialMateriais, acoesDoMaterial,camposDoFormulario, camposDoMaterial, materiaisParaChegar, resumoParaChegar, erroAoMudarSituacao, MSG_MATERIAL_COM_NOTA, MSG_PEDIDO_NAO_APROVADO, PEDIDO } from '../src/lib/materiais.js'
 import * as dados from '../src/lib/dadosMock.js'
 import { MSG_FRENTE_DE_OUTRA_OBRA } from '../src/lib/frentes.js'
 
@@ -67,6 +67,11 @@ conferir('frente de outra obra é recusada (como a chave dupla do banco)',
 conferir('não edita material de outra obra', (await dados.salvarMaterial(eng, 'mt1', form)).erro, 'Este material não é da obra escolhida.')
 dados.definirObraAtual('o1')
 conferir('material com nota não se exclui', (await dados.excluirMaterial(eng, 'mt1')).erro, MSG_MATERIAL_COM_NOTA)
+
+// Aba inicial: a pedida pelo painel ganha; senão Aguardando quando houver pedido pendente; senão A comprar.
+conferir('aba inicial: pedida pelo painel', abaInicialMateriais([{ situacao: PEDIDO }], 'Comprado'), 'Comprado')
+conferir('aba inicial: pedido pendente', abaInicialMateriais([{ situacao: 'A comprar' }, { situacao: PEDIDO }]), PEDIDO)
+conferir('aba inicial: sem pedido', abaInicialMateriais([{ situacao: 'Comprado' }]), 'A comprar')
 
 console.log(`${ok}/${tot} — materiais`)
 process.exit(ok === tot ? 0 : 1)

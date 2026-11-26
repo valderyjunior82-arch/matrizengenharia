@@ -61,10 +61,12 @@ export function LinhaFrente({ frente, hoje, onAbrir }) {
 
 const NIVEL_SITUACAO_MATERIAL = { [PEDIDO]: 'atencao', 'A comprar': 'atencao', Comprado: 'info', Entregue: 'ok' }
 
-export function LinhaMaterial({ material, hoje, frente, acoes }) {
+// onAbrir só sem `acoes`: botão dentro de botão não vale.
+export function LinhaMaterial({ material, hoje, frente, acoes, onAbrir }) {
   const urg = urgenciaMaterial(material, hoje)
+  const Linha = onAbrir ? 'button' : 'div'
   return (
-    <div className={`li ${urg === 'critico' ? 'critico' : ''}`}>
+    <Linha className={`li ${urg === 'critico' ? 'critico' : ''}`} onClick={onAbrir && (() => onAbrir(material))}>
       <div className="b">
         <div className="t">{material.item} <span style={{ fontWeight: 500, color: 'var(--muted)' }}>· {String(material.quantidade).replace('.', ',')} {material.unidade}</span></div>
         <div className="m">{frente ? frente.servico : 'sem frente'} · {material.fornecedor || 'sem fornecedor'}</div>
@@ -74,7 +76,7 @@ export function LinhaMaterial({ material, hoje, frente, acoes }) {
         <Chip nivel={urg}>{textoPrazoMaterial(material, hoje)}</Chip>
         <Chip nivel={NIVEL_SITUACAO_MATERIAL[material.situacao]}>{material.situacao}</Chip>
       </div>
-    </div>
+    </Linha>
   )
 }
 

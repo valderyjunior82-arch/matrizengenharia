@@ -104,7 +104,7 @@ export default function Hoje({ goto, profile }) {
 
           <Cartao className="consulta" titulo={`Material para chegar · ${chegar.length}`} acao={<Link onClick={() => goto('materiais')}>Ver todos</Link>}>
             {chegar.length
-              ? chegar.map((m) => <LinhaMaterial key={m.id} material={m} hoje={hoje} frente={frenteDe(m.frente_id)} />)
+              ? chegar.map((m) => <LinhaMaterial key={m.id} material={m} hoje={hoje} frente={frenteDe(m.frente_id)} onAbrir={(x) => goto('materiais', { aba: x.situacao })} />)
               : <div className="aviso">Nada para chegar nos próximos 7 dias.</div>}
           </Cartao>
 
