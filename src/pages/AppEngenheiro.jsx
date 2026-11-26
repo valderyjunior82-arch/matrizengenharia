@@ -15,10 +15,11 @@ import Obras from '../screens/obras.jsx'
 import Pessoas from '../screens/pessoas.jsx'
 import Perfil from '../screens/perfil.jsx'
 import Mais from '../screens/mais.jsx'
+import Cadastros from '../screens/cadastros.jsx'
 
 const CONFIG = {
   inicial: 'hoje',
-  telas: { hoje: Hoje, frentes: Frentes, frente: Frente, diario: Diario, dia: Dia, lancarDiario: LancarDiario, materiais: Materiais, financeiro: Financeiro, lancarNota: LancarNota, caixa: Caixa, obras: Obras, pessoas: Pessoas, perfil: Perfil, mais: Mais },
+  telas: { hoje: Hoje, frentes: Frentes, frente: Frente, diario: Diario, dia: Dia, lancarDiario: LancarDiario, materiais: Materiais, financeiro: Financeiro, lancarNota: LancarNota, caixa: Caixa, obras: Obras, pessoas: Pessoas, perfil: Perfil, mais: Mais, cadastros: Cadastros },
   barra: [
     { id: 'hoje', rotulo: 'Hoje', icone: 'hoje' },
     { id: 'frentes', rotulo: 'Frentes', icone: 'frentes' },
@@ -36,6 +37,7 @@ const CONFIG = {
     ],
     gestao: [
       { id: 'caixa', rotulo: 'Caixa geral', icone: 'caixa' },
+      { id: 'cadastros', rotulo: 'Cadastros', icone: 'diario' },
       { id: 'obras', rotulo: 'Obras', icone: 'obras' },
       { id: 'pessoas', rotulo: 'Pessoas', icone: 'pessoas' },
     ],

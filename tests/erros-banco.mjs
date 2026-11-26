@@ -41,6 +41,7 @@ conferir('Storage recusou (sem code, frase em inglês)',
   traduzirErro({ statusCode: '403', message: 'new row violates row-level security policy' }), MSG_SEM_PERMISSAO)
 conferir('trava do papel em português passa direto',
   traduzirErro({ code: '42501', message: 'Ninguém muda o próprio acesso.' }), 'Ninguém muda o próprio acesso.')
+conferir('fornecedor com nome repetido', traduzirErro({ code: '23505', message: 'duplicate key value violates unique constraint "fornecedores_nome_unico"' }), 'Já existe um fornecedor com este nome.')
 conferir('erro desconhecido do banco não mostra inglês', traduzirErro({ code: 'XX000', message: 'internal error' }), MSG_GENERICA)
 conferir('erro da própria camada passa direto', traduzirErro(new Error('Escolha uma obra no topo da tela.')), 'Escolha uma obra no topo da tela.')
 

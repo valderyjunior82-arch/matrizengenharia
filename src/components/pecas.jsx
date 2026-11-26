@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { diasSemAndar, nivelFrente, reguaDaFrente, textoLimite } from '../lib/frentes.js'
 import { PEDIDO, textoPrazoMaterial, urgenciaMaterial } from '../lib/materiais.js'
-import { dataCurta } from '../lib/formato.js'
+import { brl, dataCompleta, dataCurta, mesCurto, nomeMes, plural } from '../lib/formato.js'
 import { Chip, Folha } from './index.jsx'
 
 // Régua de prazo: o trilho vai do início ao término previstos, como uma trena.
@@ -96,5 +96,106 @@ export function FolhaDevolver({ frente, onConfirmar, onFechar }) {
         </div>
       </div>
     </Folha>
+  )
+}
+
+// ---------- dinheiro (só telas do Engenheiro) ----------
+
+// Painel: entrou × saiu do caixa, mês a mês. Altura de cada barra = valor / maior valor.
+export function GraficoMeses({ meses }) {
+  const maior = Math.max(1, ...meses.flatMap((m) => [m.entrou, m.saiu]))
+  const resumo = meses.map((m) => `${nomeMes(m.mes)}: entrou ${brl(m.entrou)}, saiu ${brl(m.saiu)}`).join('; ')
+  return (
+    <div className="grafico" role="img" aria-label={resumo}>
+      <div className="grafico-barras">
+        {meses.map((m) => (
+          <div key={m.mes} className="grafico-mes" title={`${nomeMes(m.mes)} · entrou ${brl(m.entrou)} · saiu ${brl(m.saiu)}`}>
+            <div className="grafico-par">
+              <span className="g-entrou" style={{ height: `${(m.entrou / maior) * 100}%` }} />
+              <span className="g-saiu" style={{ height: `${(m.saiu / maior) * 100}%` }} />
+            </div>
+            <span className="grafico-rot">{mesCurto(m.mes)}</span>
+          </div>
+        ))}
+      </div>
+      <div className="grafico-legenda"><span><i className="g-entrou" />Entrou</span><span><i className="g-saiu" />Saiu (pago pelo engenheiro)</span></div>
+    </div>
+  )
+}
+
+const rotuloPeriodo = (p) => (p.length === 7 ? nomeMes(p) : dataCompleta(p))
+
+// Fluxo de caixa: uma linha por dia ou mês, mais nova primeiro, com o saldo acumulado.
+export function TabelaFluxo({ fluxo }) {
+  if (!fluxo.realizado.length && !fluxo.previsto.length) return <div className="aviso">Nenhum dinheiro entrou ou saiu ainda.</div>
+  return (
+    <>
+      {fluxo.realizado.map((l) => (
+        <div key={l.periodo} className="li">
+          <div className="b">
+            <div className="t">{rotuloPeriodo(l.periodo)}</div>
+            <div className="m">entrou <span className="txt-grn">{brl(l.entrou)}</span> · saiu {brl(l.saiu)}</div>
+          </div>
+          <div className="r"><span className="muted pequeno">saldo acumulado</span><span className={`valor ${l.acumulado < 0 ? 'txt-red' : ''}`}>{brl(l.acumulado)}</span></div>
+        </div>
+      ))}
+      {fluxo.previsto.length > 0 && (
+        <>
+          <div className="dre-grupo"><span className="mono">A receber (previsto)</span></div>
+          {fluxo.previsto.map((l) => (
+            <div key={l.periodo} className="li">
+              <div className="b"><div className="t">{rotuloPeriodo(l.periodo)}</div><div className="m">parcelas do cliente ainda não recebidas</div></div>
+              <div className="r"><span className="valor muted">{brl(l.entrou)}</span></div>
+            </div>
+          ))}
+        </>
+      )}
+    </>
+  )
+}
+
+// DRE: receitas e despesas por conta. Tocar numa conta mostra os lançamentos que formam o número;
+// tocar num lançamento chama onAbrir (quando a tela permite abrir).
+export function TabelaDRE({ d, onAbrir, obraDe }) {
+  const [aberta, setAberta] = useState(null)
+  if (!d.receitas.length && !d.despesas.length && !d.pagoPeloCliente.itens.length) {
+    return <div className="aviso">Nenhum lançamento neste período.</div>
+  }
+  const linhaItem = (l) => (
+    <button key={l.id} className="li dre-item" onClick={() => onAbrir?.(l)} disabled={!onAbrir}>
+      <div className="b">
+        <div className="t">{l.descricao || l.categoria}</div>
+        <div className="m">{dataCurta(l.data)}{l.fornecedor && ` · ${l.fornecedor}`}{obraDe && ` · ${obraDe(l.obra_id)}`}</div>
+      </div>
+      <div className="r"><span className="valor">{brl(l.valor)}</span></div>
+    </button>
+  )
+  const conta = (grupo, c) => {
+    const chave = `${grupo}:${c.conta}`
+    return (
+      <div key={chave}>
+        <button className="li" aria-expanded={aberta === chave} onClick={() => setAberta(aberta === chave ? null : chave)}>
+          <div className="b"><div className="t">{c.conta}</div><div className="m">{plural(c.itens.length, 'lançamento', 'lançamentos')} · toque para ver</div></div>
+          <div className="r"><span className="valor">{brl(c.total)}</span></div>
+        </button>
+        {aberta === chave && c.itens.map(linhaItem)}
+      </div>
+    )
+  }
+  return (
+    <>
+      <div className="dre-grupo"><span className="mono">Receitas</span><span className="valor txt-grn">{brl(d.totalReceitas)}</span></div>
+      {d.receitas.map((c) => conta('r', c))}
+      <div className="dre-grupo"><span className="mono">Despesas (pagas pelo engenheiro)</span><span className="valor">{brl(d.totalDespesas)}</span></div>
+      {d.despesas.map((c) => conta('d', c))}
+      <div className="dre-grupo dre-total"><span className="mono">Resultado</span><span className={`valor ${d.resultado < 0 ? 'txt-red' : 'txt-grn'}`}>{brl(d.resultado)}</span></div>
+      {d.pagoPeloCliente.itens.length > 0 && (
+        <>
+          <div className="dre-grupo"><span className="mono">Pago direto pelo cliente</span><span className="valor muted">{brl(d.pagoPeloCliente.total)}</span></div>
+          <div className="aviso">Entra no gasto da obra, mas não no resultado: o dinheiro não passou pelo seu caixa.</div>
+          {conta('c', { conta: 'Notas pagas pelo cliente', total: d.pagoPeloCliente.total, itens: d.pagoPeloCliente.itens })}
+        </>
+      )}
+    </>
   )
 }

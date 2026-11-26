@@ -158,6 +158,20 @@ export function GradeFotos({ fotos, rotulo }) {
   )
 }
 
+// ---------- foto (diário e nota) ----------
+// Diminui a foto no celular antes de subir (máx. 1200px no lado maior, JPEG 0.8): menos internet no canteiro.
+export async function comprimirFoto(arquivo) {
+  const img = await createImageBitmap(arquivo)
+  const escala = Math.min(1, 1200 / Math.max(img.width, img.height))
+  const tela = document.createElement('canvas')
+  tela.width = Math.round(img.width * escala)
+  tela.height = Math.round(img.height * escala)
+  tela.getContext('2d').drawImage(img, 0, 0, tela.width, tela.height)
+  const blob = await new Promise((ok) => tela.toBlob(ok, 'image/jpeg', 0.8))
+  // shortcut: a prévia (link local) não é solta; some ao recarregar a página. No mock ela é a própria foto.
+  return { blob, previa: URL.createObjectURL(blob) }
+}
+
 // ---------- folha (sheet) que sobe de baixo ----------
 export function Folha({ titulo, onFechar, children }) {
   const caixa = useRef(null)

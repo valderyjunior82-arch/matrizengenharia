@@ -2,8 +2,9 @@
 import { Cartao, Icon } from '../components/index.jsx'
 
 const ITENS = [
-  { id: 'financeiro', rotulo: 'Financeiro', icone: 'financeiro', sub: 'Lançamentos, parcelas e empreiteiros desta obra' },
-  { id: 'caixa', rotulo: 'Caixa geral', icone: 'caixa', sub: 'Todas as obras juntas' },
+  { id: 'financeiro', rotulo: 'Financeiro', icone: 'financeiro', sub: 'Painel, lançamentos, fluxo de caixa e DRE desta obra' },
+  { id: 'caixa', rotulo: 'Caixa geral', icone: 'caixa', sub: 'Todas as obras juntas, com o DRE da empresa' },
+  { id: 'cadastros', rotulo: 'Cadastros', icone: 'diario', sub: 'Plano de contas e fornecedores' },
   { id: 'obras', rotulo: 'Obras', icone: 'obras', sub: 'Cadastrar e editar obras' },
   { id: 'pessoas', rotulo: 'Pessoas', icone: 'pessoas', sub: 'Liberar contas e escolher as obras' },
   { id: 'perfil', rotulo: 'Meu perfil', icone: 'perfil', sub: 'Nome e sair' },

@@ -39,3 +39,9 @@ export function plural(n, um, varios) {
 export function iniciais(nome = '') {
   return nome.replace(/^(Eng\.|Seu|Dona|Dra?\.)\s*/i, '').split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('')
 }
+
+const NOMES_MES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
+// '2026-11' → 'novembro 2026'
+export const nomeMes = (m) => `${NOMES_MES[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}`
+// '2026-11' → 'nov'
+export const mesCurto = (m) => NOMES_MES[Number(m.slice(5, 7)) - 1].slice(0, 3)

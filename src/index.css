@@ -370,3 +370,25 @@ button.li.critico:active { background: #F8D9D5; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
 }
+
+/* Financeiro: gráfico do painel, grupos do DRE e filtros (só telas do Engenheiro). */
+.grafico { padding: 16px; }
+.grafico-barras { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; height: 160px; align-items: end; }
+.grafico-mes { display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; min-width: 0; }
+.grafico-par { flex: 1; width: 100%; display: flex; justify-content: center; align-items: flex-end; gap: 4px; border-bottom: 1px solid var(--line); }
+.grafico-par span { width: 40%; max-width: 20px; min-height: 2px; border-radius: 3px 3px 0 0; }
+.grafico-rot { font-size: 12px; color: var(--muted); }
+.g-entrou { background: var(--grn); }
+.g-saiu { background: var(--ink); }
+.grafico-legenda { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; font-size: 13px; color: var(--muted); }
+.grafico-legenda i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 8px; vertical-align: -1px; }
+.dre-grupo { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 16px; background: var(--line2); }
+.dre-grupo .mono { color: var(--slate); font-size: 12px; }
+.dre-grupo .valor { font-weight: 600; font-variant-numeric: tabular-nums; }
+.dre-total { background: var(--card); border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); }
+.dre-total .valor { font-size: 18px; }
+.li.dre-item { min-height: 56px; padding-left: 32px; background: #FAFBFC; }
+.li.dre-item:disabled { opacity: 1; cursor: default; }
+.filtros { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line2); }
+.filtros .campo:first-child { grid-column: 1 / -1; }
+@media (min-width: 900px) { .filtros { grid-template-columns: repeat(3, 1fr); } .filtros .campo:first-child { grid-column: auto; } }

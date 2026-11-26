@@ -3,6 +3,7 @@
 import { MSG_FRENTE_COM_REGISTROS, MSG_FRENTE_DE_OUTRA_OBRA } from './frentes.js'
 import { MSG_OBRA_COM_REGISTROS } from './obras.js'
 import { MSG_MATERIAL_COM_NOTA } from './materiais.js'
+import { MSG_NOME_EM_USO } from './fornecedores.js'
 
 export const MSG_SEM_REDE = 'Sem conexão com a internet. Nada foi salvo: confira a rede e tente de novo.'
 export const MSG_SEM_PERMISSAO = 'Sua conta não tem permissão para isso.'
@@ -13,6 +14,7 @@ const UNICOS = {
   obras_codigo_unico: 'Já existe uma obra com este código. Escolha outro.',
   contratos_empreiteiros_frente_id_key: 'Esta frente já tem contrato.',
   membros_obra_id_profile_id_key: 'Esta pessoa já está nesta obra.',
+  fornecedores_nome_unico: MSG_NOME_EM_USO,
 }
 
 // Chave estrangeira impedindo apagar (23503) → depende de quem estava sendo apagado.

@@ -7,15 +7,17 @@
 import { hoje } from './config.js'
 import { daObra, obrasDoSeletor, obrasVisiveis } from './escopo.js'
 import { emailEmUso, normalizarEmail, obrasDoAcesso, papelDaNovaConta, podeGerenciar } from './pessoas.js'
-import { CAMPOS_CONTRATO, CAMPOS_CRIAR_CONTA, CAMPOS_FRENTE, CAMPOS_OBRA, paraNumero, validar } from './formularios.js'
+import { CAMPOS_CONTRATO, CAMPOS_CRIAR_CONTA, CAMPOS_FRENTE, CAMPOS_OBRA, paraDinheiro, validar } from './formularios.js'
 import { camposDaFrente, frenteTemRegistros, MSG_FRENTE_COM_REGISTROS, MSG_FRENTE_DE_OUTRA_OBRA, podeEditarFrente, podeMarcarPronta } from './frentes.js'
 import { codigoEmUso, erroAoRemover, MSG_OBRA_COM_REGISTROS, obraTemRegistros, podeEntrarNaObra } from './obras.js'
 import { ehEngenheiro, ehMestre, podeEditarRegistro } from './permissoes.js'
 import { caminhoFoto, camposDoRegistro, frenteAposAvanco, mexeNaFrente } from './diario.js'
 import { camposDoMaterial, erroAoMudarSituacao, materialTemNota, MSG_MATERIAL_COM_NOTA } from './materiais.js'
+import { camposDaNota, camposDaParcela, camposDoMovimento, camposDoRecebimento } from './financeiro.js'
+import { camposDoFornecedor, fornecedoresDe, juntarFornecedores, MSG_NOME_EM_USO, nomeEmUso } from './fornecedores.js'
 import {
   mockProfiles, mockSenhas, SENHA_DE_TESTE, mockObras, mockMembros, mockFrentes, mockContratos,
-  mockRegistros, mockFotos, mockMateriais, mockLancamentos,
+  mockRegistros, mockFotos, mockMateriais, mockLancamentos, mockMovimentosBanco, mockFornecedores,
 } from './mockData.js'
 
 // Cópia de trabalho: as ações (aprovar, marcar entregue…) mexem nela, e a
@@ -23,7 +25,7 @@ import {
 const db = structuredClone({
   profiles: mockProfiles, senhas: mockSenhas, obras: mockObras, membros: mockMembros, frentes: mockFrentes,
   contratos: mockContratos, registros: mockRegistros, fotos: mockFotos,
-  materiais: mockMateriais, lancamentos: mockLancamentos,
+  materiais: mockMateriais, lancamentos: mockLancamentos, movimentos: mockMovimentosBanco, fornecedores: mockFornecedores,
 })
 
 let obraAtualId = null
@@ -302,25 +304,120 @@ export const salvarContrato = (quem, frenteId, valores) => responder(() => {
   if (db.contratos.some((c) => c.frente_id === f.id)) throw new Error('Esta frente já tem contrato.')
   const c = {
     id: crypto.randomUUID(), obra_id: f.obra_id, frente_id: f.id,
-    empreiteiro: valores.empreiteiro.trim(), valor_contratado: paraNumero(valores.valor_contratado),
+    empreiteiro: valores.empreiteiro.trim(), valor_contratado: paraDinheiro(valores.valor_contratado),
     observacao: String(valores.observacao ?? '').trim() || null,
   }
   db.contratos.push(c)
   return c
 })
 
-export const marcarParcelaRecebida = (id, { data, forma_pagamento }) => responder(() => {
+export const marcarParcelaRecebida = (id, valores) => responder(() => {
   const l = daObra(db.lancamentos, exigirObra()).find((x) => x.id === id)
   if (!l) throw new Error('Esta parcela não é da obra escolhida.')
-  if (!data || !forma_pagamento) throw new Error('Informe a data e a forma de pagamento.')
-  Object.assign(l, { situacao: 'Realizado', data, forma_pagamento })
+  const { campos, erro } = camposDoRecebimento(valores)
+  if (erro) throw new Error(erro)
+  return Object.assign(l, campos)
+})
+
+// Lançamento da obra do seletor ou da "Empresa (sem obra)": a Empresa não entra no seletor,
+// então a nota dela abre de qualquer obra. Só ela; outra obra de cliente continua fechada.
+function lancamentoDaObra(id) {
+  const empresa = db.obras.find((o) => o.interna).id
+  const l = [...daObra(db.lancamentos, exigirObra()), ...daObra(db.lancamentos, empresa)].find((x) => x.id === id)
+  if (!l) throw new Error('Este lançamento não existe mais nesta obra.')
+  return l
+}
+
+export const obterLancamento = (id) => responder(() => lancamentoDaObra(id))
+
+// Mesmo contrato do banco. No mock a foto não sobe: o caminho guarda o link de prévia ({ previa }).
+export const salvarLancamento = (quem, id, valores, foto = null) => responder(() => {
+  exigirEngenheiro(quem, 'lança notas')
+  const anterior = id ? lancamentoDaObra(id) : null
+  const { campos, erro } = camposDaNota(valores, exigirObra(), anterior)
+  if (erro) throw new Error(erro)
+  const obraId = anterior?.obra_id ?? valores.obra_id
+  if (!db.obras.some((o) => o.id === obraId)) throw new Error('Escolha a obra.')
+  // Espelho da chave dupla do banco: frente, material e contrato da mesma obra.
+  if (campos.frente_id && !daObra(db.frentes, obraId).some((f) => f.id === campos.frente_id)) throw new Error(MSG_FRENTE_DE_OUTRA_OBRA)
+  if (campos.material_id && !daObra(db.materiais, obraId).some((m) => m.id === campos.material_id)) throw new Error('O material escolhido não é desta obra.')
+  if (campos.contrato_empreiteiro_id && !daObra(db.contratos, obraId).some((c) => c.id === campos.contrato_empreiteiro_id)) throw new Error('O contrato escolhido não é desta obra.')
+  const linha = foto ? { ...campos, comprovante_caminho: foto.previa ?? 'mock' } : campos
+  if (anterior) return Object.assign(anterior, linha)
+  const l = { id: crypto.randomUUID(), obra_id: obraId, autor_id: quem.id, vencimento: null, comprovante_caminho: null, ...linha }
+  db.lancamentos.push(l)
   return l
 })
 
+export const salvarParcela = (quem, valores) => responder(() => {
+  exigirEngenheiro(quem, 'cadastra parcelas')
+  const { campos, erro } = camposDaParcela(valores)
+  if (erro) throw new Error(erro)
+  const l = {
+    id: crypto.randomUUID(), obra_id: exigirObra(), autor_id: quem.id, fornecedor: null, frente_id: null, material_id: null,
+    contrato_empreiteiro_id: null, pago_por: null, forma_pagamento: null, comprovante_caminho: null, ...campos,
+  }
+  db.lancamentos.push(l)
+  return l
+})
+
+export const excluirLancamento = (quem, id) => responder(() => {
+  exigirEngenheiro(quem, 'exclui lançamentos')
+  lancamentoDaObra(id)
+  db.lancamentos = db.lancamentos.filter((l) => l.id !== id)
+  return { id }
+})
+
+// As notas de exemplo não têm arquivo ('mock'): a tela diz isso.
+export const linkComprovante = (caminho) => responder(() => (caminho?.startsWith('blob:') ? caminho : null))
+
+// COMPARATIVO entre obras (só nomes): o cadastro mais os nomes já usados em notas e materiais de TODAS as obras.
+// Junta obras de propósito, mas só nomes e quantidade de notas, sem valor.
+export const listarFornecedores = () => responder(() => juntarFornecedores(db.fornecedores,
+  fornecedoresDe([...db.lancamentos, ...db.materiais.map(({ fornecedor }) => ({ fornecedor }))])))
+
+export const salvarFornecedor = (quem, id, valores) => responder(() => {
+  exigirEngenheiro(quem, 'cadastra fornecedores')
+  const { campos, erro } = camposDoFornecedor(valores)
+  if (erro) throw new Error(erro)
+  if (nomeEmUso(db.fornecedores, campos.nome, id)) throw new Error(MSG_NOME_EM_USO)
+  if (!id) {
+    const f = { id: crypto.randomUUID(), ...campos }
+    db.fornecedores.push(f)
+    return f
+  }
+  const f = db.fornecedores.find((x) => x.id === id)
+  if (!f) throw new Error('Este fornecedor não existe mais.')
+  return Object.assign(f, campos)
+})
+
+// Nota antiga guarda o nome em texto: excluir o cadastro não mexe nela.
+export const excluirFornecedor = (quem, id) => responder(() => {
+  exigirEngenheiro(quem, 'cadastra fornecedores')
+  db.fornecedores = db.fornecedores.filter((f) => f.id !== id)
+  return { id }
+})
+
 // ---------- comparativo entre obras ----------
-// A ÚNICA busca que junta obras, porque o Caixa geral é, por definição,
-// um comparativo. Nenhuma outra função daqui pode devolver duas obras.
-export const listarCaixaGeral = () => responder(() => ({ obras: db.obras, lancamentos: db.lancamentos }))
+// As buscas que juntam obras, de propósito: esta (Caixa geral, com o saldo por banco)
+// e listarFornecedores (só nomes). Nenhuma outra função daqui pode devolver duas obras.
+export const listarCaixaGeral = () => responder(() => ({ obras: db.obras, lancamentos: db.lancamentos, movimentos: db.movimentos }))
+
+// Saldo inicial e transferência entre bancos: da empresa, não de obra (vão na obra interna).
+export const salvarMovimentoBanco = (quem, tipo, valores) => responder(() => {
+  exigirEngenheiro(quem, 'mexe no saldo dos bancos')
+  const { campos, erro } = camposDoMovimento(tipo, valores)
+  if (erro) throw new Error(erro)
+  const m = { id: crypto.randomUUID(), obra_id: db.obras.find((o) => o.interna).id, autor_id: quem.id, ...campos }
+  db.movimentos.push(m)
+  return m
+})
+
+export const excluirMovimentoBanco = (quem, id) => responder(() => {
+  exigirEngenheiro(quem, 'mexe no saldo dos bancos')
+  db.movimentos = db.movimentos.filter((m) => m.id !== id)
+  return { id }
+})
 
 // ---------- pessoas ----------
 export const listarPessoas = () => responder(() => db.profiles.map((p) => {

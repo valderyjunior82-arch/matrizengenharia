@@ -113,7 +113,7 @@ export const mockMateriais = [
 
 const lanc = (l) => ({
   vencimento: null, descricao: null, fornecedor: null, frente_id: null, material_id: null,
-  contrato_empreiteiro_id: null, pago_por: null, forma_pagamento: null, comprovante_caminho: null,
+  contrato_empreiteiro_id: null, pago_por: null, forma_pagamento: null, banco: null, comprovante_caminho: null,
   situacao: 'Realizado', autor_id: 'p1', ...l,
 })
 const parcela = (id, obra, venc, descricao, valor, situacao) =>
@@ -124,21 +124,38 @@ export const mockLancamentos = [
   parcela('l1', 'o1', '2026-10-01', 'Entrada', 30000, 'Realizado'),
   parcela('l2', 'o1', '2026-10-15', 'Quinzena 1', 12000, 'Realizado'),
   parcela('l3', 'o1', '2026-11-01', 'Quinzena 2', 12000, 'Realizado'),
-  parcela('l4', 'o1', '2026-11-15', 'Quinzena 3', 12000, 'Realizado'),
+  { ...parcela('l4', 'o1', '2026-11-15', 'Quinzena 3', 12000, 'Realizado'), banco: 'Santander' },
   parcela('l5', 'o1', '2026-12-01', 'Quinzena 4', 12000, 'Previsto'),
   parcela('l6', 'o1', '2026-12-15', 'Quinzena 5', 12000, 'Previsto'),
   parcela('l7', 'o1', '2026-11-20', 'Aditivo – forro extra', 4500, 'Previsto'),
   // Obra 1 — saídas
-  lanc({ id: 'l8', obra_id: 'o1', data: '2026-11-22', tipo: 'Saída', categoria: 'Material', valor: 1170, descricao: 'Argamassa AC-III', fornecedor: 'Leroy Merlin', frente_id: 'f3', material_id: 'mt1', pago_por: 'Engenheiro', forma_pagamento: 'Pix', comprovante_caminho: 'mock' }),
+  lanc({ id: 'l8', obra_id: 'o1', data: '2026-11-22', tipo: 'Saída', categoria: 'Material', valor: 1170, descricao: 'Argamassa AC-III', fornecedor: 'Leroy Merlin', frente_id: 'f3', material_id: 'mt1', pago_por: 'Engenheiro', forma_pagamento: 'Pix', banco: 'Inter', comprovante_caminho: 'mock' }),
   lanc({ id: 'l9', obra_id: 'o1', data: '2026-11-22', tipo: 'Saída', categoria: 'Material', valor: 186.4, descricao: 'Lixas e fita', fornecedor: 'Casa do Pintor', frente_id: 'f7', pago_por: 'Cliente' }),
-  lanc({ id: 'l10', obra_id: 'o1', data: '2026-11-20', tipo: 'Saída', categoria: 'Mão de obra', valor: 4500, descricao: 'Medição 2 – forro', fornecedor: 'Gesso Forte', frente_id: 'f2', contrato_empreiteiro_id: 'c2', pago_por: 'Engenheiro', forma_pagamento: 'Transferência' }),
+  lanc({ id: 'l10', obra_id: 'o1', data: '2026-11-20', tipo: 'Saída', categoria: 'Mão de obra', valor: 4500, descricao: 'Medição 2 – forro', fornecedor: 'Gesso Forte', frente_id: 'f2', contrato_empreiteiro_id: 'c2', pago_por: 'Engenheiro', forma_pagamento: 'Transferência', banco: 'Santander' }),
   lanc({ id: 'l11', obra_id: 'o1', data: '2026-11-19', tipo: 'Saída', categoria: 'Taxa', valor: 350, descricao: 'Taxa de mudança de entulho', fornecedor: 'Condomínio Ed. Jardins', pago_por: 'Engenheiro', forma_pagamento: 'Boleto' }),
   lanc({ id: 'l12', obra_id: 'o1', data: '2026-11-06', tipo: 'Saída', categoria: 'Mão de obra', valor: 4500, descricao: 'Medição 1 – forro', fornecedor: 'Gesso Forte', frente_id: 'f2', contrato_empreiteiro_id: 'c2', pago_por: 'Engenheiro', forma_pagamento: 'Pix' }),
-  lanc({ id: 'l13', obra_id: 'o1', data: '2026-11-14', tipo: 'Saída', categoria: 'Mão de obra', valor: 6000, descricao: 'Adiantamento – porcelanato', fornecedor: 'Pisos Prime', frente_id: 'f3', contrato_empreiteiro_id: 'c3', pago_por: 'Engenheiro', forma_pagamento: 'Pix' }),
+  lanc({ id: 'l13', obra_id: 'o1', data: '2026-11-14', tipo: 'Saída', categoria: 'Mão de obra', valor: 6000, descricao: 'Adiantamento – porcelanato', fornecedor: 'Pisos Prime', frente_id: 'f3', contrato_empreiteiro_id: 'c3', pago_por: 'Engenheiro', forma_pagamento: 'Pix', banco: 'Inter' }),
   // Empresa (sem obra)
-  lanc({ id: 'l14', obra_id: 'o-empresa', data: '2026-11-21', tipo: 'Saída', categoria: 'Outros', valor: 280, descricao: 'Combustível', fornecedor: 'Posto Shell', pago_por: 'Engenheiro', forma_pagamento: 'Cartão' }),
+  lanc({ id: 'l14', obra_id: 'o-empresa', data: '2026-11-21', tipo: 'Saída', categoria: 'Combustível', valor: 280, descricao: 'Gasolina da semana', fornecedor: 'Posto Shell', pago_por: 'Engenheiro', forma_pagamento: 'Cartão', banco: 'Dinheiro em espécie' }),
   // Obra 2 — Apto 501
-  parcela('l15', 'o2', '2026-11-02', 'Entrada', 20000, 'Realizado'),
+  { ...parcela('l15', 'o2', '2026-11-02', 'Entrada', 20000, 'Realizado'), banco: 'Inter' },
   parcela('l16', 'o2', '2026-12-01', 'Quinzena 1', 9000, 'Previsto'),
-  lanc({ id: 'l17', obra_id: 'o2', data: '2026-11-18', tipo: 'Saída', categoria: 'Material', valor: 842.3, descricao: 'Tubos e conexões PVC', fornecedor: 'Casa Hidráulica', frente_id: 'f9', pago_por: 'Engenheiro', forma_pagamento: 'Pix' }),
+  lanc({ id: 'l17', obra_id: 'o2', data: '2026-11-18', tipo: 'Saída', categoria: 'Material', valor: 842.3, descricao: 'Tubos e conexões PVC', fornecedor: 'Casa Hidráulica', frente_id: 'f9', pago_por: 'Engenheiro', forma_pagamento: 'Pix', banco: 'Santander' }),
+]
+
+// Saldo inicial e transferências: moram na obra interna (não são de obra nenhuma).
+// A taxa do condomínio (l11, 19/11) ficou sem banco de propósito: é o aviso "sem banco".
+const mov = (id, tipo, data, de_banco, para_banco, valor, descricao = null) =>
+  ({ id, obra_id: 'o-empresa', tipo, data, de_banco, para_banco, valor, descricao, autor_id: 'p1' })
+// Cadastro de fornecedores (nomes e telefones fictícios). Os outros nomes das notas ficam "sem cadastro".
+export const mockFornecedores = [
+  { id: 'fo1', nome: 'Leroy Merlin', documento: null, telefone: '(11) 5555-0101', observacao: 'Entrega em 2 dias úteis' },
+  { id: 'fo2', nome: 'Gesso Forte', documento: null, telefone: '(11) 5555-0102', observacao: null },
+]
+
+export const mockMovimentosBanco = [
+  mov('mb1', 'Saldo inicial', '2026-11-15', null, 'Santander', 8000),
+  mov('mb2', 'Saldo inicial', '2026-11-15', null, 'Inter', 3000),
+  mov('mb3', 'Saldo inicial', '2026-11-15', null, 'Dinheiro em espécie', 500),
+  mov('mb4', 'Transferência', '2026-11-21', 'Santander', 'Dinheiro em espécie', 400, 'Saque para diárias'),
 ]

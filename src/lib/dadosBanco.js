@@ -14,13 +14,15 @@ import { hoje } from './config.js'
 import { supabase } from './supabase.js'
 import { obrasDoSeletor } from './escopo.js'
 import { normalizarEmail, obrasDoAcesso, podeGerenciar } from './pessoas.js'
-import { CAMPOS_CONTRATO, CAMPOS_CRIAR_CONTA, CAMPOS_FRENTE, CAMPOS_OBRA, paraNumero, validar } from './formularios.js'
+import { CAMPOS_CONTRATO, CAMPOS_CRIAR_CONTA, CAMPOS_FRENTE, CAMPOS_OBRA, paraDinheiro, validar } from './formularios.js'
 import { camposDaFrente, podeEditarFrente } from './frentes.js'
 import { erroAoRemover, podeEntrarNaObra } from './obras.js'
 import { ehEngenheiro, ehMestre, podeEditarRegistro } from './permissoes.js'
 import { MSG_SEM_PERMISSAO, traduzirErro } from './errosBanco.js'
 import { caminhoFoto, camposDoRegistro } from './diario.js'
 import { camposDoMaterial, erroAoMudarSituacao } from './materiais.js'
+import { camposDaNota, camposDaParcela, camposDoMovimento, camposDoRecebimento } from './financeiro.js'
+import { camposDoFornecedor, fornecedoresDe, juntarFornecedores } from './fornecedores.js'
 
 let obraAtualId = null
 export function definirObraAtual(id) {
@@ -377,26 +379,139 @@ export const salvarContrato = (quem, frenteId, valores) => responder(async () =>
   const f = await frenteDaObra(frenteId)
   return ok(await banco().from('contratos_empreiteiros').insert({
     obra_id: f.obra_id, frente_id: f.id,
-    empreiteiro: valores.empreiteiro.trim(), valor_contratado: paraNumero(valores.valor_contratado),
+    empreiteiro: valores.empreiteiro.trim(), valor_contratado: paraDinheiro(valores.valor_contratado),
     observacao: String(valores.observacao ?? '').trim() || null,
   }).select().single())
 })
 
-export const marcarParcelaRecebida = (id, { data, forma_pagamento }) => responder(async () => {
-  if (!data || !forma_pagamento) throw new Error('Informe a data e a forma de pagamento.')
-  const l = ok(await banco().from('lancamentos').update({ situacao: 'Realizado', data, forma_pagamento })
+export const marcarParcelaRecebida = (id, valores) => responder(async () => {
+  const { campos, erro } = camposDoRecebimento(valores)
+  if (erro) throw new Error(erro)
+  const l = ok(await banco().from('lancamentos').update(campos)
     .eq('id', id).eq('obra_id', exigirObra()).select().maybeSingle())
   if (!l) throw new Error('Esta parcela não é da obra escolhida.')
   return l
 })
 
+const COMPROVANTES = 'comprovantes'
+
+const idDaEmpresa = async () => ok(await banco().from('obras').select('id').eq('interna', true).limit(1).single()).id
+
+// Lançamento da obra do seletor ou da "Empresa (sem obra)": a Empresa não entra no seletor,
+// então a nota dela abre de qualquer obra. Só ela; outra obra de cliente continua fechada.
+async function lancamentoDaObra(id) {
+  const obras = [exigirObra(), await idDaEmpresa()]
+  const l = ok(await banco().from('lancamentos').select('*').eq('id', id).in('obra_id', obras).maybeSingle())
+  if (!l) throw new Error('Este lançamento não existe mais nesta obra.')
+  return l
+}
+
+export const obterLancamento = (id) => responder(() => lancamentoDaObra(id))
+
+// Nota nova (id = null) ou edição. Nota nova pode ir para outra obra ou para a "Empresa"
+// (valores.obra_id); edição fica na obra dela. `foto` = { blob } JPEG, opcional.
+// Ordem: arquivo → linha. Se a linha falhar, o arquivo que subiu é removido.
+export const salvarLancamento = (quem, id, valores, foto = null) => responder(async () => {
+  exigirEngenheiro(quem, 'lança notas')
+  const anterior = id ? await lancamentoDaObra(id) : null
+  const { campos, erro } = camposDaNota(valores, exigirObra(), anterior)
+  if (erro) throw new Error(erro)
+  const obraId = anterior?.obra_id ?? valores.obra_id
+  if (!obraId) throw new Error('Escolha a obra.')
+  const caminho = foto ? `${obraId}/${crypto.randomUUID()}.jpg` : null
+  if (caminho) ok(await banco().storage.from(COMPROVANTES).upload(caminho, foto.blob, { contentType: 'image/jpeg' }))
+  try {
+    const linha = caminho ? { ...campos, comprovante_caminho: caminho } : campos
+    const l = anterior
+      ? ok(await banco().from('lancamentos').update(linha).eq('id', id).eq('obra_id', obraId).select().single())
+      : ok(await banco().from('lancamentos').insert({ ...linha, obra_id: obraId, autor_id: quem.id }).select().single())
+    // Foto trocada: a antiga sai. shortcut: se apagar falhar, o arquivo velho fica sem ninguém apontar.
+    if (caminho && anterior?.comprovante_caminho) await banco().storage.from(COMPROVANTES).remove([anterior.comprovante_caminho])
+    return l
+  } catch (e) {
+    if (caminho) await banco().storage.from(COMPROVANTES).remove([caminho])
+    throw e
+  }
+})
+
+export const salvarParcela = (quem, valores) => responder(async () => {
+  exigirEngenheiro(quem, 'cadastra parcelas')
+  const { campos, erro } = camposDaParcela(valores)
+  if (erro) throw new Error(erro)
+  return ok(await banco().from('lancamentos').insert({ ...campos, obra_id: exigirObra(), autor_id: quem.id }).select().single())
+})
+
+// Apaga a linha e depois a foto da nota.
+export const excluirLancamento = (quem, id) => responder(async () => {
+  exigirEngenheiro(quem, 'exclui lançamentos')
+  const l = await lancamentoDaObra(id)
+  const apagados = ok(await banco().from('lancamentos').delete().eq('id', id).eq('obra_id', l.obra_id).select('id'))
+  if (!apagados.length) throw new Error(MSG_SEM_PERMISSAO)
+  if (l.comprovante_caminho) await banco().storage.from(COMPROVANTES).remove([l.comprovante_caminho])
+  return { id }
+})
+
+// A foto da nota abre por um link que vale 1 hora. Nota de exemplo sem arquivo: null.
+export const linkComprovante = (caminho) => responder(async () => {
+  const { data, error } = await banco().storage.from(COMPROVANTES).createSignedUrl(caminho, 3600)
+  if (error) return null
+  return data.signedUrl
+})
+
+// COMPARATIVO entre obras (só nomes): o cadastro mais os nomes já usados em notas e materiais de TODAS as obras.
+// Junta obras de propósito, mas devolve só nome e quantidade de notas, sem valor.
+export const listarFornecedores = () => responder(async () => juntarFornecedores(
+  await todas(() => banco().from('fornecedores').select('*')),
+  fornecedoresDe([
+    ...await todas(() => banco().from('lancamentos').select('id, fornecedor, tipo')),
+    ...await todas(() => banco().from('materiais').select('id, fornecedor')),
+  ]),
+))
+
+// Nome repetido: o índice fornecedores_nome_unico recusa, e errosBanco.js traduz.
+export const salvarFornecedor = (quem, id, valores) => responder(async () => {
+  exigirEngenheiro(quem, 'cadastra fornecedores')
+  const { campos, erro } = camposDoFornecedor(valores)
+  if (erro) throw new Error(erro)
+  const f = id
+    ? ok(await banco().from('fornecedores').update(campos).eq('id', id).select().maybeSingle())
+    : ok(await banco().from('fornecedores').insert(campos).select().single())
+  if (!f) throw new Error('Este fornecedor não existe mais.')
+  return f
+})
+
+// Nota antiga guarda o nome em texto: excluir o cadastro não mexe nela.
+export const excluirFornecedor = (quem, id) => responder(async () => {
+  exigirEngenheiro(quem, 'cadastra fornecedores')
+  const apagados = ok(await banco().from('fornecedores').delete().eq('id', id).select('id'))
+  if (!apagados.length) throw new Error(MSG_SEM_PERMISSAO)
+  return { id }
+})
+
 // ---------- comparativo entre obras ----------
-// A ÚNICA busca que junta obras, porque o Caixa geral é, por definição,
-// um comparativo. Nenhuma outra função daqui pode devolver duas obras.
+// As buscas que juntam obras, de propósito: esta (Caixa geral, com o saldo por banco)
+// e listarFornecedores (só nomes). Nenhuma outra função daqui pode devolver duas obras.
 export const listarCaixaGeral = () => responder(async () => ({
   obras: await todas(() => banco().from('obras').select('*')),
   lancamentos: await todas(() => banco().from('lancamentos').select('*')),
+  movimentos: await todas(() => banco().from('movimentos_banco').select('*')),
 }))
+
+// Saldo inicial e transferência entre bancos: da empresa, não de obra (vão na obra interna;
+// a política do banco recusa qualquer outra).
+export const salvarMovimentoBanco = (quem, tipo, valores) => responder(async () => {
+  exigirEngenheiro(quem, 'mexe no saldo dos bancos')
+  const { campos, erro } = camposDoMovimento(tipo, valores)
+  if (erro) throw new Error(erro)
+  return ok(await banco().from('movimentos_banco').insert({ ...campos, obra_id: await idDaEmpresa(), autor_id: quem.id }).select().single())
+})
+
+export const excluirMovimentoBanco = (quem, id) => responder(async () => {
+  exigirEngenheiro(quem, 'mexe no saldo dos bancos')
+  const apagados = ok(await banco().from('movimentos_banco').delete().eq('id', id).select('id'))
+  if (!apagados.length) throw new Error(MSG_SEM_PERMISSAO)
+  return { id }
+})
 
 // ---------- pessoas ----------
 export const listarPessoas = () => responder(async () => {

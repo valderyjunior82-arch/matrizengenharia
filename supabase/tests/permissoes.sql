@@ -13,6 +13,7 @@ declare
   n int;
   ok boolean;
   obra_nova uuid; n_frente uuid;
+  emp uuid;  -- a obra interna "Empresa (sem obra)", que já existe no banco
 begin
   -- pessoas (o gatilho cria os profiles; o primeiro do teste NÃO é o primeiro do sistema
   -- se já houver contas, então os papéis são acertados à mão logo depois)
@@ -39,7 +40,12 @@ begin
   -- arquivos de foto (só a linha; o arquivo em si não importa para a regra), um em cada obra
   insert into storage.objects (bucket_id, name) values
     ('fotos-obra', obra_a || '/' || public.hoje_obra() || '/a.jpg'),
-    ('fotos-obra', obra_b || '/' || public.hoje_obra() || '/b.jpg');
+    ('fotos-obra', obra_b || '/' || public.hoje_obra() || '/b.jpg'),
+    ('comprovantes', obra_a || '/nota-a.jpg');
+  select id into emp from public.obras where interna limit 1;
+  insert into public.movimentos_banco (obra_id, tipo, data, para_banco, valor, autor_id)
+    values (emp, 'Saldo inicial', current_date, 'Inter', 100, eng);
+  insert into public.fornecedores (nome, telefone) values ('Fornecedor Teste Permissão', '(11) 5555-0000');
 
   -- ================= MESTRE (só obra A) =================
   perform set_config('request.jwt.claims', json_build_object('sub', mestre, 'role', 'authenticated')::text, true);
@@ -141,6 +147,30 @@ begin
   exception when others then ok := true; end;
   if not ok then falhas := falhas || 'Mestre envia foto na obra B'; end if;
 
+  -- foto da nota é dinheiro: o Mestre não lê nem envia, nem na obra dele
+  select count(*) into n from storage.objects where bucket_id = 'comprovantes';
+  if n <> 0 then falhas := falhas || 'Mestre lê foto de nota (comprovantes)'; end if;
+  ok := false;
+  begin insert into storage.objects (bucket_id, name) values ('comprovantes', obra_a || '/m.jpg'); exception when others then ok := true; end;
+  if not ok then falhas := falhas || 'Mestre envia foto de nota'; end if;
+  ok := false;
+  begin insert into public.lancamentos (obra_id, data, tipo, categoria, valor, pago_por, autor_id) values (obra_a, current_date, 'Saída', 'Material', 10, 'Engenheiro', mestre);
+  exception when others then ok := true; end;
+  if not ok then falhas := falhas || 'Mestre lança nota'; end if;
+  -- saldo de banco é dinheiro
+  select count(*) into n from public.movimentos_banco;
+  if n <> 0 then falhas := falhas || 'Mestre lê saldo de banco'; end if;
+  ok := false;
+  begin insert into public.movimentos_banco (obra_id, tipo, data, para_banco, valor, autor_id) values (emp, 'Saldo inicial', current_date, 'Inter', 1, mestre);
+  exception when others then ok := true; end;
+  if not ok then falhas := falhas || 'Mestre grava saldo de banco'; end if;
+  -- fornecedor tem telefone e documento: o Mestre não lê nem grava
+  select count(*) into n from public.fornecedores;
+  if n <> 0 then falhas := falhas || 'Mestre lê fornecedores'; end if;
+  ok := false;
+  begin insert into public.fornecedores (nome) values ('Do Mestre'); exception when others then ok := true; end;
+  if not ok then falhas := falhas || 'Mestre cadastra fornecedor'; end if;
+
   ok := false;
   begin update public.profiles set role = 'Engenheiro' where id = mestre; exception when others then ok := true; end;
   if not ok then falhas := falhas || 'Mestre se promove a Engenheiro'; end if;
@@ -183,6 +213,12 @@ begin
   ok := false;
   begin update public.profiles set role = 'Engenheiro' where id = espera; exception when others then ok := true; end;
   if not ok then falhas := falhas || 'Aguardando se libera sozinho'; end if;
+  select count(*) into n from storage.objects where bucket_id = 'comprovantes';
+  if n <> 0 then falhas := falhas || 'Aguardando vê foto de nota'; end if;
+  select count(*) into n from public.movimentos_banco;
+  if n <> 0 then falhas := falhas || 'Aguardando lê saldo de banco'; end if;
+  select count(*) into n from public.fornecedores;
+  if n <> 0 then falhas := falhas || 'Aguardando lê fornecedores'; end if;
 
   -- ================= ENGENHEIRO =================
   perform set_config('role', 'postgres', true);
@@ -196,6 +232,43 @@ begin
   if n <> 2 then falhas := falhas || 'Engenheiro não vê as duas obras'; end if;
   select count(*) into n from public.lancamentos where obra_id = obra_a;
   if n <> 1 then falhas := falhas || 'Engenheiro não lê lançamentos'; end if;
+  select count(*) into n from storage.objects where bucket_id = 'comprovantes' and name like obra_a || '/%';
+  if n <> 1 then falhas := falhas || 'Engenheiro NÃO lê a foto da nota'; end if;
+  begin insert into storage.objects (bucket_id, name, owner_id) values ('comprovantes', obra_b || '/e.jpg', eng::text);
+  exception when others then falhas := falhas || ('Engenheiro não envia foto de nota: ' || sqlerrm); end;
+  begin insert into public.lancamentos (obra_id, data, tipo, categoria, valor, pago_por, autor_id) values (obra_b, current_date, 'Saída', 'Combustível', 10, 'Engenheiro', eng);
+  exception when others then falhas := falhas || ('Conta nova Combustível recusada: ' || sqlerrm); end;
+  ok := false;
+  begin insert into public.lancamentos (obra_id, data, tipo, categoria, valor, pago_por, autor_id) values (obra_b, current_date, 'Saída', 'Inventada', 10, 'Engenheiro', eng);
+  exception when others then ok := true; end;
+  if not ok then falhas := falhas || 'CHECK aceita conta fora do plano'; end if;
+  -- bancos (migration 10)
+  begin insert into public.lancamentos (obra_id, data, tipo, categoria, valor, pago_por, banco, autor_id) values (obra_b, current_date, 'Saída', 'Outros', 10, 'Engenheiro', 'Santander', eng);
+  exception when others then falhas := falhas || ('Lançamento com banco recusado: ' || sqlerrm); end;
+  ok := false;
+  begin insert into public.lancamentos (obra_id, data, tipo, categoria, valor, pago_por, banco, autor_id) values (obra_b, current_date, 'Saída', 'Outros', 10, 'Engenheiro', 'Itaú', eng);
+  exception when others then ok := true; end;
+  if not ok then falhas := falhas || 'CHECK aceita banco fora da lista'; end if;
+  select count(*) into n from public.movimentos_banco where obra_id = emp and autor_id = eng;
+  if n <> 1 then falhas := falhas || 'Engenheiro não lê saldo de banco'; end if;
+  begin insert into public.movimentos_banco (obra_id, tipo, data, de_banco, para_banco, valor, autor_id) values (emp, 'Transferência', current_date, 'Santander', 'Dinheiro em espécie', 50, eng);
+  exception when others then falhas := falhas || ('Engenheiro não transfere entre bancos: ' || sqlerrm); end;
+  ok := false;
+  begin insert into public.movimentos_banco (obra_id, tipo, data, de_banco, para_banco, valor, autor_id) values (obra_b, 'Transferência', current_date, 'Santander', 'Inter', 50, eng);
+  exception when others then ok := true; end;
+  if not ok then falhas := falhas || 'Transferência gravada em obra de cliente'; end if;
+  ok := false;
+  begin insert into public.movimentos_banco (obra_id, tipo, data, de_banco, para_banco, valor, autor_id) values (emp, 'Transferência', current_date, 'Inter', 'Inter', 50, eng);
+  exception when others then ok := true; end;
+  if not ok then falhas := falhas || 'Transferência para o mesmo banco aceita'; end if;
+  -- fornecedores (migration 11)
+  select count(*) into n from public.fornecedores where nome = 'Fornecedor Teste Permissão';
+  if n <> 1 then falhas := falhas || 'Engenheiro não lê fornecedores'; end if;
+  begin insert into public.fornecedores (nome) values ('Outro Fornecedor Teste');
+  exception when others then falhas := falhas || ('Engenheiro não cadastra fornecedor: ' || sqlerrm); end;
+  ok := false;
+  begin insert into public.fornecedores (nome) values (' fornecedor teste PERMISSÃO '); exception when others then ok := true; end;
+  if not ok then falhas := falhas || 'Fornecedor com nome repetido aceito'; end if;
   begin update public.profiles set role = 'Mestre' where id = espera;
   exception when others then falhas := falhas || ('Engenheiro não libera outra pessoa: ' || sqlerrm); end;
   ok := false;

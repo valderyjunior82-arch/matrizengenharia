@@ -52,7 +52,7 @@ export default function Materiais({ goto, profile }) {
     recusar: (m) => <button key="recusar" className="btn sec" onClick={() => setFolha({ tipo: 'recusar', m })}>Recusar</button>,
     comprado: (m) => <button key="comprado" className="btn sec" disabled={enviando} onClick={() => mudar(m, 'Comprado', `${m.item}: comprado.`)}>Marcar comprado</button>,
     entregue: (m) => <button key="entregue" className="btn pri" onClick={() => setFolha({ tipo: 'entregue', m })}>Marcar entregue</button>,
-    nota: (m) => <button key="nota" className="btn sec" onClick={() => goto('lancarNota', { categoria: 'Material', frente_id: m.frente_id, fornecedor: m.fornecedor })}>Lançar nota</button>,
+    nota: (m) => <button key="nota" className="btn sec" onClick={() => goto('lancarNota', { categoria: 'Material', frente_id: m.frente_id, fornecedor: m.fornecedor, material_id: m.id })}>Lançar nota</button>,
     editar: (m) => <button key="editar" className="btn sec" onClick={() => setFolha({ tipo: 'editar', m })}>Editar</button>,
   }
   const acoes = (m) => {

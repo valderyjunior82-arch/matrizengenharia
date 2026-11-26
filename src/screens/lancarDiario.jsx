@@ -8,23 +8,10 @@ import { camposDiario } from '../lib/formularios.js'
 import { TIPOS_REGISTRO } from '../lib/vocabulario.js'
 import { diaRelativo } from '../lib/formato.js'
 import { frentesParaAvanco } from '../lib/diario.js'
-import { avisar, BotaoVoltar, Cartao, Carregando, ErroCarga, Formulario, Icon } from '../components/index.jsx'
+import { avisar, BotaoVoltar, comprimirFoto, Cartao, Carregando, ErroCarga, Formulario, Icon } from '../components/index.jsx'
 
 const ICONE_TIPO = { Avanço: 'frentes', Equipe: 'equipe', Ocorrência: 'alerta' }
 const TITULO_TIPO = { Avanço: 'Avanço de frente', Equipe: 'Equipe presente', Ocorrência: 'Ocorrência' }
-
-// Diminui a foto no celular antes de subir (máx. 1200px no lado maior, JPEG 0.8): menos internet no canteiro.
-async function comprimir(arquivo) {
-  const img = await createImageBitmap(arquivo)
-  const escala = Math.min(1, 1200 / Math.max(img.width, img.height))
-  const tela = document.createElement('canvas')
-  tela.width = Math.round(img.width * escala)
-  tela.height = Math.round(img.height * escala)
-  tela.getContext('2d').drawImage(img, 0, 0, tela.width, tela.height)
-  const blob = await new Promise((ok) => tela.toBlob(ok, 'image/jpeg', 0.8))
-  // shortcut: a prévia (link local) não é solta; some ao recarregar a página. No mock ela é a própria foto.
-  return { blob, previa: URL.createObjectURL(blob) }
-}
 
 export default function LancarDiario({ goto, voltar: volta, params = {}, profile }) {
   const hoje = hojeDe()
@@ -49,7 +36,7 @@ export default function LancarDiario({ goto, voltar: volta, params = {}, profile
     const arquivos = [...e.target.files]
     e.target.value = ''
     try {
-      const novas = await Promise.all(arquivos.map(comprimir))
+      const novas = await Promise.all(arquivos.map(comprimirFoto))
       setFotos((atuais) => [...atuais, ...novas.map((n) => ({ ...n, id: crypto.randomUUID() }))])
     } catch {
       avisar('Não foi possível abrir esta foto. Tente outra.')

@@ -21,5 +21,6 @@ export const {
   listarFrentes, obterFrente, salvarFrente, excluirFrente, aprovarFrente, devolverFrente, marcarFrentePronta,
   listarRegistros, listarFotos, salvarRegistro, excluirRegistro, listarMateriais, salvarMaterial, excluirMaterial, mudarSituacaoMaterial,
   listarContratos, listarLancamentos, salvarContrato, marcarParcelaRecebida,
-  listarCaixaGeral, listarPessoas, salvarAcesso, definirAtivo, salvarMeuNome,
+  obterLancamento, salvarLancamento, salvarParcela, excluirLancamento, linkComprovante, listarFornecedores, salvarFornecedor, excluirFornecedor,
+  listarCaixaGeral, salvarMovimentoBanco, excluirMovimentoBanco, listarPessoas, salvarAcesso, definirAtivo, salvarMeuNome,
 } = d

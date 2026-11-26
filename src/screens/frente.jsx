@@ -104,7 +104,7 @@ export default function Frente({ goto, voltar: volta, params, profile }) {
           </div>
         ))}
         <div className="acoes um">
-          <button className="btn pri" onClick={() => goto('lancarNota', { categoria: 'Mão de obra', frente_id: f.id, fornecedor: contrato.empreiteiro })}>Registrar pagamento</button>
+          <button className="btn pri" onClick={() => goto('lancarNota', { categoria: 'Mão de obra', frente_id: f.id, fornecedor: contrato.empreiteiro, contrato_empreiteiro_id: contrato.id })}>Registrar pagamento</button>
         </div>
       </>
     )

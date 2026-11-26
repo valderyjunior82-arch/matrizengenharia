@@ -80,3 +80,20 @@ Uma linha por item aprovado na página de testes: data · o que mudou · o que p
 - 24/11/2026 · Materiais · Uma obra não mostra os materiais da outra; sem internet avisa que não salvou.
 - 24/11/2026 · Materiais · Pedido do Mestre aparece no painel Hoje seja qual for a data; compra além de 7 dias continua fora (achado da revisão).
 - 24/11/2026 · Materiais · Editar um pedido não mostra Situação e ele continua aguardando; a lista de Situação não oferece "Aguardando aprovação"; rodapé do painel diz "N aguardando".
+- 25/11/2026 · Lançar nota · Nota com foto fica gravada depois do F5; a foto abre; editar não duplica; "Lançar outra" mantém obra e data.
+- 25/11/2026 · Lançar nota · Valor "12.000" grava doze mil (conserto do ponto de milhar).
+- 25/11/2026 · Lançar nota · Campo vazio ou valor 0 não salva e diz por quê; Entrada só oferece as contas de entrada e esconde "Pago por".
+- 25/11/2026 · Lançar nota · Gasto da Empresa (sem obra) não entra em obra nenhuma e aparece no DRE da empresa; excluir lançamento some depois do F5.
+- 25/11/2026 · Financeiro · Painel (resumo, gráfico de 6 meses, onde foi o dinheiro), filtros de Lançamentos, Fluxo diário e mensal, DRE analítico.
+- 25/11/2026 · Financeiro · Nova parcela grava e pode ser marcada recebida.
+- 25/11/2026 · Cadastros · Plano de contas e fornecedores sem repetir; fornecedor vira sugestão na nota.
+- 25/11/2026 · Caixa geral · DRE da empresa junta as obras e abre a nota na obra certa.
+- 25/11/2026 · Financeiro · Uma obra não mostra o dinheiro da outra; o Mestre não vê dinheiro; sem internet a nota não some calada.
+- 25/11/2026 · Saldo por banco · Informar o saldo de cada banco (começo do dia) fica gravado depois do F5.
+- 25/11/2026 · Saldo por banco · Lançar nota pede o banco e esconde quando o cliente pagou; receber parcela pergunta em qual banco entrou; os saldos mudam pelo valor certo.
+- 25/11/2026 · Saldo por banco · Transferir entre bancos não muda o total e recusa o mesmo banco; excluir refaz o saldo; lançamento sem banco aparece no aviso.
+- 25/11/2026 · Saldo por banco · O Mestre não vê banco nem saldo.
+- 25/11/2026 · Revisão · "Onde foi o dinheiro" fecha com o Total gasto e mostra as mesmas notas que a lista.
+- 25/11/2026 · Revisão · Nota da Empresa abre pelo Caixa geral, edita (fica gravada após F5) e exclui.
+- 25/11/2026 · Revisão · Quantidade "1.5" continua 1,5; valor "1.500" vira R$ 1.500,00.
+- 25/11/2026 · Cadastros · Fornecedor se cadastra, edita e exclui; nome repetido é recusado; "Sem cadastro" se completa; o Mestre não vê.

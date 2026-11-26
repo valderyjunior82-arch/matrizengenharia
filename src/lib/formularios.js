@@ -8,7 +8,7 @@
 // opcoesDe: nome da lista que a tela injeta (ex.: as frentes da obra atual).
 import {
   SITUACOES_OBRA, SITUACOES_FRENTE, SITUACOES_MATERIAL, PEDIDO, TIPOS_LANCAMENTO,
-  CATEGORIAS, PAGO_POR, FORMAS_PAGAMENTO,
+  CONTAS_ENTRADA, CONTAS_SAIDA, PAGO_POR, FORMAS_PAGAMENTO, BANCOS,
 } from './vocabulario.js'
 
 export const CAMPOS_OBRA = [
@@ -60,9 +60,34 @@ export const CAMPOS_PARCELA = [
 ]
 
 // "Marcar recebida": a data do recebimento (padrão hoje) e a forma de pagamento.
+// Cadastros gerais: fornecedor. Só o nome é obrigatório.
+export const CAMPOS_FORNECEDOR = [
+  { nome: 'nome', rotulo: 'Nome', tipo: 'texto', obrigatorio: true, inteiro: true },
+  { nome: 'documento', rotulo: 'CNPJ ou CPF', tipo: 'texto' },
+  { nome: 'telefone', rotulo: 'Telefone', tipo: 'texto' },
+  { nome: 'observacao', rotulo: 'Observação', tipo: 'texto', inteiro: true, ajuda: 'Ex.: entrega só de manhã; pedir nota no CNPJ da empresa' },
+]
+
 export const CAMPOS_RECEBIMENTO = [
   { nome: 'data', rotulo: 'Data do recebimento', tipo: 'data', obrigatorio: true },
   { nome: 'forma_pagamento', rotulo: 'Forma de pagamento', tipo: 'lista', opcoes: FORMAS_PAGAMENTO, obrigatorio: true },
+  { nome: 'banco', rotulo: 'Entrou em', tipo: 'lista', opcoes: BANCOS, obrigatorio: true },
+]
+
+// Caixa geral: passar dinheiro de um banco para outro (ex.: saque do Santander para o dinheiro em espécie).
+export const CAMPOS_TRANSFERENCIA = [
+  { nome: 'de_banco', rotulo: 'Sai de', tipo: 'lista', opcoes: BANCOS, obrigatorio: true },
+  { nome: 'para_banco', rotulo: 'Entra em', tipo: 'lista', opcoes: BANCOS, obrigatorio: true },
+  { nome: 'valor', rotulo: 'Valor', tipo: 'dinheiro', obrigatorio: true },
+  { nome: 'data', rotulo: 'Data', tipo: 'data', obrigatorio: true },
+  { nome: 'descricao', rotulo: 'Descrição', tipo: 'texto', ajuda: 'Ex.: Saque para pagar diária' },
+]
+
+// Caixa geral: o saldo de um banco no começo do dia (o extrato). Daí em diante o app soma.
+export const CAMPOS_SALDO_BANCO = [
+  { nome: 'para_banco', rotulo: 'Banco', tipo: 'lista', opcoes: BANCOS, obrigatorio: true },
+  { nome: 'data', rotulo: 'Saldo no começo do dia', tipo: 'data', obrigatorio: true },
+  { nome: 'valor', rotulo: 'Saldo (R$)', tipo: 'dinheiro', aceitaNegativo: true, obrigatorio: true, ajuda: 'Pode ser 0, ou negativo se a conta estiver no vermelho.' },
 ]
 
 const ehSaida = (v) => v.tipo === 'Saída'
@@ -71,12 +96,18 @@ export const CAMPOS_NOTA = [
   { nome: 'obra_id', rotulo: 'Obra', tipo: 'lista', opcoesDe: 'obras', obrigatorio: true },
   { nome: 'data', rotulo: 'Data', tipo: 'data', obrigatorio: true },
   { nome: 'tipo', rotulo: 'Tipo', tipo: 'lista', opcoes: TIPOS_LANCAMENTO, obrigatorio: true, padrao: 'Saída' },
-  { nome: 'categoria', rotulo: 'Categoria', tipo: 'lista', opcoes: CATEGORIAS, obrigatorio: true },
+  // O mesmo campo com duas listas: só a do tipo escolhido aparece (e só ela é cobrada).
+  { nome: 'categoria', rotulo: 'Conta', tipo: 'lista', opcoes: CONTAS_SAIDA, obrigatorio: true, visivel: ehSaida },
+  { nome: 'categoria', rotulo: 'Conta', tipo: 'lista', opcoes: CONTAS_ENTRADA, obrigatorio: true, visivel: (v) => !ehSaida(v) },
   { nome: 'valor', rotulo: 'Valor', tipo: 'dinheiro', obrigatorio: true },
-  { nome: 'fornecedor', rotulo: 'Fornecedor', tipo: 'texto' },
-  // Some sozinha quando a obra não tem frentes (ex.: "Empresa (sem obra)").
+  { nome: 'fornecedor', rotulo: 'Fornecedor', tipo: 'texto', sugestoesDe: 'fornecedores' },
+  // Frente, material e contrato somem quando a lista está vazia (ex.: "Empresa (sem obra)").
   { nome: 'frente_id', rotulo: 'Frente', tipo: 'lista', opcoesDe: 'frentes' },
+  { nome: 'material_id', rotulo: 'Material', tipo: 'lista', opcoesDe: 'materiais' },
+  { nome: 'contrato_empreiteiro_id', rotulo: 'Contrato de empreiteiro', tipo: 'lista', opcoesDe: 'contratos' },
   { nome: 'pago_por', rotulo: 'Pago por', tipo: 'lista', opcoes: PAGO_POR, obrigatorio: true, padrao: 'Engenheiro', visivel: ehSaida },
+  // Nota paga pelo Cliente não passou pelo seu caixa: sem banco.
+  { nome: 'banco', rotulo: 'Banco', tipo: 'lista', opcoes: BANCOS, obrigatorio: true, visivel: (v) => !ehSaida(v) || v.pago_por !== 'Cliente' },
   { nome: 'forma_pagamento', rotulo: 'Forma de pagamento', tipo: 'lista', opcoes: FORMAS_PAGAMENTO },
   { nome: 'descricao', rotulo: 'Descrição', tipo: 'texto', inteiro: true },
 ]
@@ -121,10 +152,17 @@ export function valoresIniciais(campos, extra = {}) {
   return { ...v, ...extra }
 }
 
-// "1.170,50" → 1170.5 · "2,5" → 2.5 · "2.5" → 2.5 (sem vírgula, o ponto é decimal).
+// "1.170,50" → 1170.5 · "2,5" → 2.5 · "2.5" → 2.5 (sem vírgula, o ponto é decimal: quantidade "1.5" kg).
 export function paraNumero(texto) {
   const s = String(texto).trim().replace(/^R\$\s*/, '')
   return Number(s.includes(',') ? s.replace(/\./g, '').replace(',', '.') : s)
+}
+
+// Dinheiro: como paraNumero, mas "12.000" → 12000 e "1.170" → 1170 (ponto + grupos de 3 = milhar,
+// como se escreve valor no Brasil). Só para valor em R$: em quantidade, "1.500" é 1,5.
+export function paraDinheiro(texto) {
+  const s = String(texto).trim().replace(/^R\$\s*/, '')
+  return /^-?\d{1,3}(\.\d{3})+$/.test(s) ? Number(s.replace(/\./g, '')) : paraNumero(s)
 }
 
 // Devolve { campo: 'mensagem' } só com o que está errado. Vazio = pode salvar.
@@ -138,9 +176,9 @@ export function validar(campos, valores) {
       continue
     }
     if (c.tipo === 'numero' || c.tipo === 'dinheiro') {
-      const n = paraNumero(bruto)
+      const n = c.tipo === 'dinheiro' ? paraDinheiro(bruto) : paraNumero(bruto)
       if (Number.isNaN(n)) erros[c.nome] = 'Use só números.'
-      else if (c.tipo === 'dinheiro' && n <= 0) erros[c.nome] = 'Precisa ser maior que zero.'
+      else if (c.tipo === 'dinheiro' && !c.aceitaNegativo && n <= 0) erros[c.nome] = 'Precisa ser maior que zero.'
       else if (c.min !== undefined && n < c.min) erros[c.nome] = `Mínimo ${String(c.min).replace('.', ',')}.`
       else if (c.max !== undefined && n > c.max) erros[c.nome] = `Máximo ${c.max}.`
     }
