@@ -19,6 +19,7 @@ export default function Caixa({ goto, profile }) {
   const [mes, setMes] = useState(hoje.slice(0, 7))
   // 'Transferência' · 'Saldo inicial' (formulário) · { excluir: movimento }
   const [folha, setFolha] = useState(null)
+  const [excluindo, setExcluindo] = useState(false)
   const { carregando, erro, data, recarregar } = useCarregar(listarCaixaGeral)
 
   if (carregando && !data) return <Carregando />
@@ -46,7 +47,10 @@ export default function Caixa({ goto, profile }) {
     recarregar()
   }
   const excluirMovimento = async (m) => {
+    if (excluindo) return
+    setExcluindo(true)
     const { erro: e } = await excluirMovimentoBanco(profile, m.id)
+    setExcluindo(false)
     setFolha(null)
     avisar(e || 'Excluído. O saldo foi refeito.')
     recarregar()
@@ -58,7 +62,7 @@ export default function Caixa({ goto, profile }) {
       <div className="faixa"><b>Comparativo entre obras.</b> Esta tela junta todas as obras e não depende da obra escolhida no topo.</div>
 
       <div className="titulo-tela">
-        <div><div className="rotulo">Caixa geral da empresa</div><h2 className={c.saldoCaixa < 0 ? 'txt-red' : ''}>{brl(c.saldoCaixa)}</h2></div>
+        <div><div className="rotulo">Caixa geral da empresa · total nos bancos</div><h2 className={sb.total < 0 ? 'txt-red' : ''}>{brl(sb.total)}</h2></div>
         {!vazio && <div className="campo" style={{ minWidth: 168 }}>
           <label htmlFor="mes">Mês</label>
           <select id="mes" value={mes} onChange={(e) => setMes(e.target.value)}>
@@ -156,7 +160,7 @@ export default function Caixa({ goto, profile }) {
           <div style={{ padding: 16 }}>{nomeMovimento(folha.excluir)} · {brl(folha.excluir.valor)} · {dataCompleta(folha.excluir.data)}. O saldo dos bancos é refeito sem ele. Não dá para desfazer.</div>
           <div className="acoes">
             <button className="btn sec" onClick={() => setFolha(null)}>Cancelar</button>
-            <button className="btn perigo" onClick={() => excluirMovimento(folha.excluir)}>Excluir</button>
+            <button className="btn perigo" disabled={excluindo} onClick={() => excluirMovimento(folha.excluir)}>{excluindo ? 'Excluindo…' : 'Excluir'}</button>
           </div>
         </Folha>
       )}

@@ -39,9 +39,12 @@ conferir('soma sem erro de centavo', resumoObra([
 ], HOJE).gasto, 0.3)
 
 const caixa = caixaGeral(mockObras, mockLancamentos, HOJE, '2026-11')
-conferir('caixa: o gasto da Empresa (sem obra) entra no saldo', caixa.saldoCaixa, 49480 + (20000 - 842.3) - 280)
 conferir('caixa: uma linha por obra, inclusive a Empresa', caixa.porObra.length, 3)
 conferir('caixa: parcelas vencidas de todas as obras', caixa.vencidas.map((l) => l.id), ['l7'])
+const parcela = (id, vencimento) => ({ id, tipo: 'Entrada', situacao: 'Previsto', valor: 1, data: vencimento, vencimento, obra_id: 'o1' })
+conferir('caixa: parcela mais atrasada primeiro',
+  caixaGeral(mockObras, [parcela('b', '2026-11-20'), parcela('a', '2026-10-01'), parcela('c', '2026-11-22')], HOJE, '2026-11').vencidas.map((l) => l.id),
+  ['a', 'b', 'c'])
 
 
 // ---------- fluxo de caixa ----------

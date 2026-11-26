@@ -100,3 +100,5 @@ Uma linha por item aprovado na página de testes: data · o que mudou · o que p
 - 25/11/2026 · Parcelas · Tocar numa parcela abre o lançamento dela.
 - 25/11/2026 · Contrato do empreiteiro · Tocar num pagamento abre o lançamento; editar o contrato fica gravado após F5; com pagamento não se exclui; sem pagamento se exclui.
 - 25/11/2026 · Revisão · Corrigir a data de uma parcela muda o vencimento e não pede banco; parcela e entrada não se ligam a contrato; contrato não aceita valor menor que o já pago.
+- 25/11/2026 · Caixa geral · O número do topo é o total nos bancos; parcelas vencidas com a mais atrasada primeiro; obra concluída abre pelo Caixa com "Concluída" no topo e o TROCAR para sair.
+- 25/11/2026 · Caixa geral · Excluir uma transferência com dois toques rápidos não mostra aviso de permissão.

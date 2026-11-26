@@ -30,11 +30,12 @@ function SeletorObra({ onTrocar }) {
     <>
       <div className="mark"><MarcaM tamanho={30} /></div>
       <div className="obra">
-        <div className="rot mono">Obra · {obra.codigo}</div>
+        <div className="rot mono">Obra · {obra.codigo}{obra.situacao === 'Concluída' && ' · Concluída'}</div>
         <h1>{obra.nome}</h1>
         <div className="sub">{[obra.cliente_nome, obra.data_meta_entrega && `entrega ${dataCurta(obra.data_meta_entrega)}`].filter(Boolean).join(' · ')}</div>
       </div>
-      {obras.length > 1 && (
+      {/* Obra concluída aberta pelo Caixa geral não está na lista: o botão aparece para sair dela. */}
+      {obras.some((o) => o.id !== obraId) && (
         <button className="trocar" onClick={() => setAberto(true)} aria-label="Trocar de obra">
           TROCAR <Icon nome="baixo" tamanho={14} />
         </button>

@@ -65,7 +65,7 @@ export function lancamentosRecentes(lancamentos) {
 }
 
 // Caixa geral: a ÚNICA conta que junta obras, porque a tela é um comparativo.
-// `mes` no formato 'AAAA-MM'.
+// `mes` no formato 'AAAA-MM'. O saldo da empresa é o total de saldosPorBanco (decisão de 25/11).
 export function caixaGeral(obras, lancamentos, hoje, mes) {
   const doMes = (l) => l.data.slice(0, 7) === mes
   const realizadas = lancamentos.filter((l) => l.situacao === 'Realizado')
@@ -74,13 +74,13 @@ export function caixaGeral(obras, lancamentos, hoje, mes) {
   const entrouMes = soma(entradasReal.filter(doMes))
   const saiuMes = soma(saidasEng.filter(doMes))
   return {
-    saldoCaixa: menos(soma(entradasReal), soma(saidasEng)),
     entrouMes,
     saiuMes,
     resultadoMes: menos(entrouMes, saiuMes),
     porObra: obras.map((o) => ({ obra: o, ...resumoObra(lancamentos.filter((l) => l.obra_id === o.id), hoje) })),
     vencidas: lancamentos
       .filter((l) => ehEntrada(l) && l.situacao === 'Previsto' && l.vencimento && l.vencimento < hoje)
+      .sort((a, b) => (a.vencimento < b.vencimento ? -1 : a.vencimento > b.vencimento ? 1 : 0)) // a mais atrasada primeiro
       .map((l) => ({ ...l, obra: obras.find((o) => o.id === l.obra_id) })),
   }
 }
