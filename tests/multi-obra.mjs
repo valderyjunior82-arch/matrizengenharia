@@ -38,6 +38,12 @@ conferir('Mestre vê só as obras em que é membro, sem a Empresa',
 conferir('Mestre fora da obra 2 não a vê',
   obrasVisiveis(mock.mockObras, [{ obra_id: 'o1', profile_id: 'p2' }], mestre).map((o) => o.id), ['o1'])
 conferir('Conta aguardando não vê obra nenhuma', obrasVisiveis(mock.mockObras, mock.mockMembros, aguardando).length, 0)
+const papel = (r) => mock.mockProfiles.find((p) => p.role === r)
+conferir('Financeiro vê todas, inclusive a Empresa (Caixa geral)', obrasVisiveis(mock.mockObras, mock.mockMembros, papel('Financeiro')).length, 3)
+conferir('Contador vê todas, inclusive a Empresa', obrasVisiveis(mock.mockObras, mock.mockMembros, papel('Contador')).length, 3)
+conferir('Cliente vê só a obra em que foi colocado', obrasVisiveis(mock.mockObras, mock.mockMembros, papel('Cliente')).map((o) => o.id), ['o2'])
+conferir('Cliente nunca vê a Empresa, nem marcado nela',
+  obrasVisiveis(mock.mockObras, [{ obra_id: 'o-empresa', profile_id: 'p6' }], papel('Cliente')).length, 0)
 conferir('Pessoa desativada não vê obra nenhuma', obrasVisiveis(mock.mockObras, mock.mockMembros, { ...eng, ativo: false }).length, 0)
 
 // 5. O seletor e a obra lembrada.

@@ -19,12 +19,16 @@ export const mockProfiles = [
   { id: 'p1', nome: 'Eng. Júnior', email: 'engenheiro@exemplo.com', role: 'Engenheiro', ativo: true },
   { id: 'p2', nome: 'Seu Antônio', email: 'antonio@exemplo.com', role: 'Mestre', ativo: true },
   { id: 'p3', nome: 'Lucas Ferreira (estagiário)', email: 'lucas@exemplo.com', role: 'Aguardando', ativo: true },
+  // Perfis de 27/11/2026: o Cliente só está no Apto 501 (o 1802 serve para ver que ele não enxerga).
+  { id: 'p4', nome: 'Marta (escritório)', email: 'financeiro@exemplo.com', role: 'Financeiro', ativo: true },
+  { id: 'p5', nome: 'Contabilidade Exemplo', email: 'contador@exemplo.com', role: 'Contador', ativo: true },
+  { id: 'p6', nome: 'Roberto (cliente)', email: 'cliente@exemplo.com', role: 'Cliente', ativo: true },
 ]
 
 // Senha de mentira, só do mock: fica numa tabela à parte, como o login do
 // Supabase guarda a senha fora de profiles. Some na etapa do banco.
 export const SENHA_DE_TESTE = 'obra1234'
-export const mockSenhas = { p1: SENHA_DE_TESTE, p2: SENHA_DE_TESTE, p3: SENHA_DE_TESTE }
+export const mockSenhas = Object.fromEntries(['p1', 'p2', 'p3', 'p4', 'p5', 'p6'].map((id) => [id, SENHA_DE_TESTE]))
 
 export const mockObras = [
   {
@@ -49,6 +53,7 @@ export const mockMembros = [
   { id: 'm2', obra_id: 'o2', profile_id: 'p1' },
   { id: 'm3', obra_id: 'o1', profile_id: 'p2' },
   { id: 'm4', obra_id: 'o2', profile_id: 'p2' },
+  { id: 'm5', obra_id: 'o2', profile_id: 'p6' },
 ]
 
 const frente = (f) => ({

@@ -1,5 +1,6 @@
 // Login e pessoas: regras puras (lib/pessoas.js) e o fluxo pela camada de dados (mock).
-import { emailEmUso, erroDeAcesso, obrasDoAcesso, papelDaNovaConta, podeGerenciar } from '../src/lib/pessoas.js'
+import { DESCRICAO_DO_PAPEL, emailEmUso, erroDeAcesso, obrasDaPessoa, obrasDoAcesso, papelDaNovaConta, podeGerenciar } from '../src/lib/pessoas.js'
+import { PAPEIS_DE_ACESSO } from '../src/lib/vocabulario.js'
 import { CAMPOS_CRIAR_CONTA, validar } from '../src/lib/formularios.js'
 import * as dados from '../src/lib/dadosMock.js'
 import { SENHA_DE_TESTE } from '../src/lib/mockData.js'
@@ -26,12 +27,22 @@ conferir('Engenheiro desativado não gerencia', podeGerenciar({ ...eng, ativo: f
 conferir('Mestre sem obra é recusado', !!erroDeAcesso('Mestre', []), true)
 conferir('Mestre com obra passa', erroDeAcesso('Mestre', ['o1']), null)
 conferir('Engenheiro não precisa de obra', erroDeAcesso('Engenheiro', []), null)
-conferir('perfil fora da lista é recusado', !!erroDeAcesso('Cliente', ['o1']), true)
+conferir('perfil fora da lista é recusado', !!erroDeAcesso('Dono', ['o1']), true)
+conferir('Aguardando não é perfil de acesso', !!erroDeAcesso('Aguardando', []), true)
+conferir('Cliente sem obra é recusado, com o nome dele', erroDeAcesso('Cliente', []), 'Marque pelo menos uma obra para o Cliente.')
+conferir('Cliente com obra passa', erroDeAcesso('Cliente', ['o1']), null)
+conferir('Financeiro e Contador não precisam de obra', [erroDeAcesso('Financeiro', []), erroDeAcesso('Contador', [])], [null, null])
+conferir('todo perfil de acesso tem descrição', PAPEIS_DE_ACESSO.every((r) => !!DESCRICAO_DO_PAPEL[r]), true)
+conferir('Contador aparece com todas as obras', obrasDaPessoa({ role: 'Contador', obras: [] }), 'todas as obras')
+conferir('Cliente aparece com as obras dele', obrasDaPessoa({ role: 'Cliente', obras: ['Apto 501'] }), 'Apto 501')
+conferir('Cliente sem obra aparece assim', obrasDaPessoa({ role: 'Cliente', obras: [] }), 'nenhuma obra')
 
 // Obras ao salvar o acesso (abertas = as que a tela oferece para marcar)
 conferir('Engenheiro mantém as obras que já tinha', obrasDoAcesso(['o1', 'o2'], 'Engenheiro', [], ['o1', 'o2']), { erro: null, obraIds: ['o1', 'o2'] })
 conferir('obra concluída escondida não conta como obra do Mestre', !!obrasDoAcesso(['o1', 'o2'], 'Mestre', ['o1'], ['o2']).erro, true)
 conferir('vínculo com obra concluída fica guardado', obrasDoAcesso(['o1', 'o2'], 'Mestre', ['o2'], ['o2']).obraIds, ['o1', 'o2'])
+conferir('Financeiro mantém os vínculos que tinha (vê todas)', obrasDoAcesso(['o1'], 'Financeiro', ['o2'], ['o1', 'o2']), { erro: null, obraIds: ['o1'] })
+conferir('Cliente fica só com a obra marcada', obrasDoAcesso([], 'Cliente', ['o2', 'o2'], ['o1', 'o2']).obraIds, ['o2'])
 conferir('Mestre troca de obra aberta', obrasDoAcesso(['o2'], 'Mestre', ['o3'], ['o2', 'o3']).obraIds, ['o3'])
 
 // Validação do Criar conta

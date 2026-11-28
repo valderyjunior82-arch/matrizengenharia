@@ -38,6 +38,11 @@ export const CAMPOS_CONTRATO = [
   { nome: 'valor_contratado', rotulo: 'Valor contratado', tipo: 'dinheiro', obrigatorio: true },
   { nome: 'observacao', rotulo: 'Observação', tipo: 'textoLongo', inteiro: true },
 ]
+// Contrato novo fora do detalhe da frente (aba Empreiteiros do Financeiro): escolhe a frente.
+export const CAMPOS_CONTRATO_NOVO = [
+  { nome: 'frente_id', rotulo: 'Frente', tipo: 'lista', opcoesDe: 'frentes', obrigatorio: true, inteiro: true },
+  ...CAMPOS_CONTRATO,
+]
 
 export const CAMPOS_MATERIAL = [
   { nome: 'item', rotulo: 'Item', tipo: 'texto', obrigatorio: true, inteiro: true },

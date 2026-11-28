@@ -6,6 +6,8 @@ import { useObra } from '../lib/ObraContext.jsx'
 import { idDaEmpresa } from '../lib/escopo.js'
 import { hoje as hojeDe } from '../lib/config.js'
 import { excluirMovimentoBanco, listarCaixaGeral, salvarMovimentoBanco } from '../lib/dados.js'
+import { mexeDinheiro } from '../lib/permissoes.js'
+import { FolhaNota } from './financeiro.jsx'
 import { useCarregar } from '../lib/usarDados.js'
 import { caixaGeral, dre, mesesDe, saldosPorBanco } from '../lib/financeiro.js'
 import { CAMPOS_SALDO_BANCO, CAMPOS_TRANSFERENCIA } from '../lib/formularios.js'
@@ -14,13 +16,15 @@ import { brl, dataCompleta, nomeMes, plural } from '../lib/formato.js'
 import { avisar, Cartao, Carregando, ErroCarga, Folha, Formulario, Vazio } from '../components/index.jsx'
 import { TabelaDRE } from '../components/pecas.jsx'
 
-export default function Caixa({ goto, profile }) {
+export default function Caixa({ goto, temTela, profile }) {
   const hoje = hojeDe()
   const { trocarObra } = useObra()
   const [mes, setMes] = useState(hoje.slice(0, 7))
   // 'Transferência' · 'Saldo inicial' (formulário) · { excluir: movimento }
   const [folha, setFolha] = useState(null)
   const [excluindo, setExcluindo] = useState(false)
+  const [lendo, setLendo] = useState(null) // lançamento aberto só para ler (Contador)
+  const grava = mexeDinheiro(profile)
   const { carregando, erro, data, recarregar } = useCarregar(listarCaixaGeral)
 
   if (carregando && !data) return <Carregando />
@@ -35,7 +39,9 @@ export default function Caixa({ goto, profile }) {
   const abrirObra = (id) => { trocarObra(id); goto('financeiro') }
   const obraDe = (id) => data.obras.find((o) => o.id === id)?.nome ?? ''
   // Abre o lançamento na obra dele. A "Empresa" não entra no seletor: a nota dela abre sem trocar de obra.
+  // O Contador não tem Lançar nota: lê numa folha, sem trocar de obra.
   const abrirLancamento = (l) => {
+    if (!temTela('lancarNota')) { setLendo(l); return }
     if (l.obra_id !== idDaEmpresa(data.obras)) trocarObra(l.obra_id)
     goto('lancarNota', { id: l.id })
   }
@@ -97,19 +103,24 @@ export default function Caixa({ goto, profile }) {
             ))}
           </>
         )}
-        <div className="acoes">
+        {grava && <div className="acoes">
           <button className="btn sec" onClick={() => setFolha('Transferência')}>Transferir entre bancos</button>
           <button className="btn sec" onClick={() => setFolha('Saldo inicial')}>Informar saldo</button>
-        </div>
+        </div>}
       </Cartao>
 
       <Cartao titulo={`Transferências e saldos informados · ${movimentos.length}`}>
-        {movimentos.length ? movimentos.map((m) => (
-          <button key={m.id} className="li" onClick={() => setFolha({ excluir: m })}>
-            <div className="b"><div className="t">{nomeMovimento(m)}</div><div className="m">{dataCompleta(m.data)}{m.descricao && ` · ${m.descricao}`}</div></div>
-            <div className="r"><span className="valor">{brl(m.valor)}</span></div>
-          </button>
-        )) : <div className="aviso">Nada ainda. Comece por <b>Informar saldo</b>: o saldo de hoje de cada banco, como está no extrato.</div>}
+        {movimentos.length ? movimentos.map((m) => {
+          const miolo = (
+            <>
+              <div className="b"><div className="t">{nomeMovimento(m)}</div><div className="m">{dataCompleta(m.data)}{m.descricao && ` · ${m.descricao}`}</div></div>
+              <div className="r"><span className="valor">{brl(m.valor)}</span></div>
+            </>
+          )
+          return grava
+            ? <button key={m.id} className="li" onClick={() => setFolha({ excluir: m })}>{miolo}</button>
+            : <div key={m.id} className="li">{miolo}</div>
+        }) : <div className="aviso">{grava ? <>Nada ainda. Comece por <b>Informar saldo</b>: o saldo de hoje de cada banco, como está no extrato.</> : 'Nenhum saldo informado ainda.'}</div>}
       </Cartao>
 
       {vazio ? <div className="card"><Vazio icone="caixa" titulo="Nenhum lançamento ainda." texto="O resultado do mês, o DRE e as obras aparecem assim que você lançar a primeira nota ou parcela." /></div> : <>
@@ -158,7 +169,7 @@ export default function Caixa({ goto, profile }) {
       )}
       {folha?.empresa && (
         <Folha titulo={`${folha.empresa.nome} · notas`} onFechar={() => setFolha(null)}>
-          {!data.lancamentos.some((l) => l.obra_id === folha.empresa.id) && <div className="aviso">Nenhuma nota da empresa ainda. Em <b>Lançar nota</b>, escolha a obra <b>{folha.empresa.nome}</b>.</div>}
+          {!data.lancamentos.some((l) => l.obra_id === folha.empresa.id) && <div className="aviso">Nenhuma nota da empresa ainda.{grava && <> Em <b>Lançar nota</b>, escolha a obra <b>{folha.empresa.nome}</b>.</>}</div>}
           {data.lancamentos.filter((l) => l.obra_id === folha.empresa.id).sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : 0)).map((l) => (
             <button key={l.id} className="li" onClick={() => abrirLancamento(l)}>
               <div className="b"><div className="t">{l.descricao || l.categoria}</div><div className="m">{dataCompleta(l.data)} · {l.categoria}</div></div>
@@ -167,6 +178,7 @@ export default function Caixa({ goto, profile }) {
           ))}
         </Folha>
       )}
+      {lendo && <FolhaNota nota={lendo} onFechar={() => setLendo(null)} />}
       {folha?.excluir && (
         <Folha titulo="Excluir" onFechar={() => setFolha(null)}>
           <div style={{ padding: 16 }}>{nomeMovimento(folha.excluir)} · {brl(folha.excluir.valor)} · {dataCompleta(folha.excluir.data)}. O saldo dos bancos é refeito sem ele. Não dá para desfazer.</div>

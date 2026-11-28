@@ -4,7 +4,7 @@ import { useObra } from '../lib/ObraContext.jsx'
 import { adicionarNaObra, excluirObra, listarPessoas, removerDaObra, salvarObra } from '../lib/dados.js'
 import { useCarregar } from '../lib/usarDados.js'
 import { CAMPOS_OBRA } from '../lib/formularios.js'
-import { mestresDaObra, obrasDoCadastro, podeEntrarNaObra } from '../lib/obras.js'
+import { obrasDoCadastro, pessoasDaObra, podeEntrarNaObra } from '../lib/obras.js'
 import { obrasDoSeletor } from '../lib/escopo.js'
 import { dataCompleta } from '../lib/formato.js'
 import { avisar, Cartao, Carregando, Chip, ErroCarga, Folha, Formulario, Icon, Vazio } from '../components/index.jsx'
@@ -74,7 +74,7 @@ function FolhaObra({ obra, profile, pessoas, aberta, onFechar, onGravar, onPesso
   const [quem, setQuem] = useState('')
   const [confirmando, setConfirmando] = useState(false)
   const [enviando, setEnviando] = useState(false)
-  const mestres = mestresDaObra(pessoas, obra.id)
+  const daObra = pessoasDaObra(pessoas, obra.id)
   const candidatos = pessoas.filter((p) => podeEntrarNaObra(p, p.obra_ids, obra.id))
 
   // Adicionar e Remover deixam a folha aberta: só a lista de pessoas muda.
@@ -93,28 +93,28 @@ function FolhaObra({ obra, profile, pessoas, aberta, onFechar, onGravar, onPesso
       <Formulario campos={CAMPOS_OBRA} inicial={obra} duasColunas onCancelar={onFechar}
         onSalvar={(v) => onGravar(salvarObra(profile, obra.id, v), 'Obra salva.')} />
 
-      <div className="ch"><span className="mono">Quem trabalha nesta obra</span></div>
-      {mestres.map((p) => (
+      <div className="ch"><span className="mono">Quem está nesta obra</span></div>
+      {daObra.map((p) => (
         <div key={p.id} className="li" style={{ minHeight: 56 }}>
           <div className="b"><div className="t">{p.nome}</div><div className="m">{p.role}{!p.ativo && ' · desativado'}</div></div>
           <button className="btn sec" disabled={enviando} onClick={() => mexer(removerDaObra(profile, obra.id, p.id), `${p.nome} saiu desta obra.`)}>Remover</button>
         </div>
       ))}
       <div className="form">
-        {!mestres.length && <div className="ajuda">Nenhum mestre nesta obra ainda. O Engenheiro vê todas as obras.</div>}
+        {!daObra.length && <div className="ajuda">Nenhum mestre ou cliente nesta obra ainda. Engenheiro, Financeiro e Contador veem todas as obras.</div>}
         {candidatos.length > 0 ? (
           <div className="campo">
             <label htmlFor="add-pessoa">Adicionar pessoa</label>
             <div style={{ display: 'flex', gap: 8 }}>
               <select id="add-pessoa" value={quem} onChange={(e) => setQuem(e.target.value)} style={{ flex: 1 }}>
-                <option value="">Escolha o mestre…</option>
-                {candidatos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+                <option value="">Escolha a pessoa…</option>
+                {candidatos.map((p) => <option key={p.id} value={p.id}>{p.nome} · {p.role}</option>)}
               </select>
               <button className="btn sec" disabled={!quem || enviando}
                 onClick={() => mexer(adicionarNaObra(profile, obra.id, quem), `${candidatos.find((p) => p.id === quem)?.nome} entrou nesta obra.`)}>Adicionar</button>
             </div>
           </div>
-        ) : <div className="ajuda">Todos os mestres ativos já estão nesta obra. Conta nova se libera em Pessoas.</div>}
+        ) : <div className="ajuda">Todos os mestres e clientes ativos já estão nesta obra. Conta nova se libera em Pessoas.</div>}
 
         {obrasDoSeletor([obra]).length > 0 && !aberta && (
           <div className="acoes um" style={{ padding: 0 }}><button className="btn pri" onClick={onAbrir}>Abrir esta obra</button></div>

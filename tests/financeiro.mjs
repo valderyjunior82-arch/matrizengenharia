@@ -1,7 +1,7 @@
 // Contas do financeiro, com os lançamentos de exemplo ("hoje" = 23/11/2026).
 import {
   contasDeEntrada, MSG_APORTE_SO_NA_EMPRESA,
-  caixaGeral, camposDaNota, gastoPorConta, camposDaParcela, camposDoMovimento, camposDoRecebimento, saldosPorBanco, dre, filtrarLancamentos, fluxoDeCaixa, pagoDoContrato, resumoObra,
+  caixaGeral, camposDaNota, frentesSemContrato, gastoPorConta, camposDaParcela, camposDoMovimento, camposDoRecebimento, saldosPorBanco, dre, filtrarLancamentos, fluxoDeCaixa, pagoDoContrato, resumoObra,
   situacaoParcela, ultimosMeses, MSG_CONTRATO_COM_PAGAMENTO, erroValorDoContrato, pagamentosDoContrato,
 } from '../src/lib/financeiro.js'
 import { fornecedoresDe, juntarFornecedores, nomeEmUso, camposDoFornecedor } from '../src/lib/fornecedores.js'
@@ -163,7 +163,7 @@ mock.definirObraAtual('o2')
 conferir('Apto 501 não exclui lançamento do Apto 1802', (await mock.excluirLancamento(eng, 'l8')).erro, 'Este lançamento não existe mais nesta obra.')
 conferir('Apto 501 não edita lançamento do Apto 1802', (await mock.salvarLancamento(eng, 'l8', nota)).erro, 'Este lançamento não existe mais nesta obra.')
 conferir('nota no Apto 501 com frente do Apto 1802 é recusada', (await mock.salvarLancamento(eng, null, { ...nota, obra_id: 'o2' })).erro, 'A frente escolhida não é desta obra.')
-conferir('Mestre não lança nota', (await mock.salvarLancamento(mestre, null, { ...nota, obra_id: 'o2', frente_id: '' })).erro, 'Só o Engenheiro lança notas.')
+conferir('Mestre não lança nota', (await mock.salvarLancamento(mestre, null, { ...nota, obra_id: 'o2', frente_id: '' })).erro, 'Sua conta não lança notas.')
 const nova = (await mock.salvarParcela(eng, { descricao: 'Quinzena 2', valor: '9.000', vencimento: '2026-12-15' })).data
 conferir('parcela nova entra na obra do seletor', nova.obra_id, 'o2')
 conferir('a lista do Apto 501 não traz nada do Apto 1802', (await mock.listarLancamentos()).data.every((l) => l.obra_id === 'o2'), true)
@@ -175,7 +175,7 @@ conferir('nota da Empresa se edita e continua na Empresa', [empEditada?.obra_id,
 const fNovo = (await mock.salvarFornecedor(eng, null, { nome: 'Casa Nova Tintas', telefone: '(11) 5555-0199' })).data
 conferir('fornecedor novo entra na lista sem nota', (await mock.listarFornecedores()).data.find((f) => f.nome === 'Casa Nova Tintas')?.cadastro?.id, fNovo.id)
 conferir('fornecedor com nome repetido é recusado', (await mock.salvarFornecedor(eng, null, { nome: 'leroy merlin' })).erro, 'Já existe um fornecedor com este nome.')
-conferir('Mestre não cadastra fornecedor', (await mock.salvarFornecedor(mestre, null, { nome: 'Qualquer' })).erro, 'Só o Engenheiro cadastra fornecedores.')
+conferir('Mestre não cadastra fornecedor', (await mock.salvarFornecedor(mestre, null, { nome: 'Qualquer' })).erro, 'Sua conta não cadastra fornecedores.')
 await mock.excluirFornecedor(eng, 'fo1')
 conferir('excluir o cadastro não some com o nome das notas', (await mock.listarFornecedores()).data.find((f) => f.nome === 'Leroy Merlin')?.cadastro, null)
 conferir('nota da Empresa se exclui', (await mock.excluirLancamento(eng, 'l14')).erro, null)
@@ -188,7 +188,20 @@ const contrato = { empreiteiro: 'Gesso Forte', valor_contratado: '20.000', obser
 conferir('Apto 501 não edita contrato do Apto 1802', (await mock.salvarContrato(eng, 'f2', contrato, 'c2')).erro, 'Este contrato não é da obra escolhida.')
 conferir('Apto 501 não exclui contrato do Apto 1802', (await mock.excluirContrato(eng, 'c2')).erro, 'Este contrato não é da obra escolhida.')
 mock.definirObraAtual('o1')
-conferir('Mestre não exclui contrato', (await mock.excluirContrato(mestre, 'c7')).erro, 'Só o Engenheiro exclui contratos.')
+conferir('Mestre não exclui contrato', (await mock.excluirContrato(mestre, 'c7')).erro, 'Sua conta não exclui contratos.')
+// Perfis de 27/11: o Contador só olha; o Financeiro grava como o Engenheiro.
+const contador = mockProfiles.find((p) => p.role === 'Contador')
+const financeiro = mockProfiles.find((p) => p.role === 'Financeiro')
+conferir('Contador não lança nota', (await mock.salvarLancamento(contador, null, { ...nota, obra_id: 'o2', frente_id: '' })).erro, 'Sua conta não lança notas.')
+conferir('Contador não marca parcela recebida', (await mock.marcarParcelaRecebida(contador, 'x', {})).erro, 'Sua conta não marca parcelas como recebidas.')
+conferir('Contador não mexe no saldo dos bancos', (await mock.salvarMovimentoBanco(contador, 'Saldo inicial', {})).erro, 'Sua conta não mexe no saldo dos bancos.')
+conferir('Contador não cadastra fornecedor', (await mock.salvarFornecedor(contador, null, { nome: 'Qualquer' })).erro, 'Sua conta não cadastra fornecedores.')
+conferir('frente com contrato não volta para cadastrar outro', frentesSemContrato([{ id: 'f1' }, { id: 'f2' }], [{ frente_id: 'f1' }]).map((f) => f.id), ['f2'])
+conferir('Contador não cadastra contrato', (await mock.salvarContrato(contador, 'f1', { empreiteiro: 'X', valor_contratado: '10' })).erro, 'Sua conta não cadastra contratos.')
+conferir('Contador não exclui contrato', (await mock.excluirContrato(contador, 'c7')).erro, 'Sua conta não exclui contratos.')
+mock.definirObraAtual('o1')
+conferir('Financeiro não cadastra segundo contrato na mesma frente', (await mock.salvarContrato(financeiro, 'f7', { empreiteiro: 'X', valor_contratado: '10' })).erro, 'Esta frente já tem contrato.')
+conferir('Financeiro cadastra fornecedor', (await mock.salvarFornecedor(financeiro, null, { nome: 'Fornecedor do Escritório' })).erro, null)
 conferir('editar contrato grava o valor novo', (await mock.salvarContrato(eng, 'f2', contrato, 'c2')).data?.valor_contratado, 20000)
 conferir('editar não cria segundo contrato', (await mock.listarContratos()).data.filter((c) => c.frente_id === 'f2').length, 1)
 conferir('contrato com pagamento não se exclui', (await mock.excluirContrato(eng, 'c2')).erro, MSG_CONTRATO_COM_PAGAMENTO)

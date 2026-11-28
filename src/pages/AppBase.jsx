@@ -1,5 +1,5 @@
 // Roteamento por estado (sem endereço no navegador), igual para todos os perfis.
-// Cada perfil (AppEngenheiro, AppMestre) só diz quais telas e quais menus tem.
+// Cada perfil (AppEngenheiro, AppMestre, AppFinanceiro, AppCliente) só diz quais telas e quais menus tem.
 import { useState } from 'react'
 import { useObra } from '../lib/ObraContext.jsx'
 import { Carregando, ErroCarga, Vazio } from '../components/index.jsx'
@@ -63,7 +63,8 @@ export default function AppBase({ profile, config }) {
     )
   } else {
     const Tela = config.telas[rota.tela]
-    corpo = <Tela goto={goto} voltar={voltar} params={rota.params} profile={profile} />
+    // temTela: a tela pergunta se um link leva a algum lugar neste perfil (ex.: o Contador não tem Lançar nota).
+    corpo = <Tela goto={goto} temTela={(t) => !!config.telas[t]} voltar={voltar} params={rota.params} profile={profile} />
   }
 
   return (

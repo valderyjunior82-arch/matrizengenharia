@@ -39,7 +39,7 @@ export default function Frentes({ goto, params, profile }) {
 
       {frentes.length === 0 ? (
         <div className="card">
-          <Vazio titulo="Nenhuma frente ainda." texto="Cadastre as frentes de serviço da obra: elétrica, gesso, marcenaria…"
+          <Vazio titulo="Nenhuma frente ainda." texto={engenheiro ? 'Cadastre as frentes de serviço da obra: elétrica, gesso, marcenaria…' : 'O engenheiro ainda não cadastrou as frentes desta obra.'}
             botao={engenheiro ? 'Cadastrar a primeira frente' : null} onBotao={() => setCriando(true)} />
         </div>
       ) : agruparPorSituacao(lista).map((g) => (

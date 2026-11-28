@@ -3,13 +3,14 @@ import { useState } from 'react'
 import { hoje as hojeDe } from '../lib/config.js'
 import { listarFotos, listarFrentes, listarRegistros } from '../lib/dados.js'
 import { useCarregar, juntar } from '../lib/usarDados.js'
+import { lancaNoCanteiro } from '../lib/permissoes.js'
 import { ambientesDe } from '../lib/frentes.js'
 import { fotosPorDia, rotuloFoto } from '../lib/diario.js'
 import { dataCurta, diaRelativo, diaSemanaCurto, plural } from '../lib/formato.js'
 import { Cartao, Carregando, Chip, ErroCarga, GradeFotos, Icon, Vazio } from '../components/index.jsx'
 import { AbasTopo } from '../components/Shell.jsx'
 
-export default function Diario({ goto }) {
+export default function Diario({ goto, profile }) {
   const hoje = hojeDe()
   const [aba, setAba] = useState('dias')
   const [filtro, setFiltro] = useState('todos')
@@ -24,6 +25,7 @@ export default function Diario({ goto }) {
   const dias = [...new Set(registros.map((r) => r.data))].sort().reverse()
   const deHoje = registros.filter((r) => r.data === hoje)
   const servico = (id) => frentes.find((f) => f.id === id)?.servico
+  const lanca = lancaNoCanteiro(profile) // o Cliente só lê o diário
 
   const cartaoHoje = (
     <div className="hoje">
@@ -31,15 +33,15 @@ export default function Diario({ goto }) {
       <h2>{deHoje.length ? plural(deHoje.length, 'registro lançado', 'registros lançados') : 'Nada lançado ainda'}</h2>
       <p>{deHoje.length
         ? deHoje.map((r) => r.tipo + (r.frente_id ? `: ${servico(r.frente_id)}` : '')).join(' · ')
-        : 'Registre o que cada frente fez, quem veio e o que deu errado. Foto ajuda a provar depois.'}</p>
-      <button className="btn pri lg full" onClick={() => goto('lancarDiario')}><Icon nome="camera" tamanho={22} />Lançar no diário</button>
+        : lanca ? 'Registre o que cada frente fez, quem veio e o que deu errado. Foto ajuda a provar depois.' : 'O que a equipe registrar hoje aparece aqui.'}</p>
+      {lanca && <button className="btn pri lg full" onClick={() => goto('lancarDiario')}><Icon nome="camera" tamanho={22} />Lançar no diário</button>}
     </div>
   )
 
   const abas = <AbasTopo ativa={aba} onTrocar={setAba} abas={[{ id: 'dias', rotulo: 'Dias', n: dias.length }, { id: 'fotos', rotulo: 'Fotos', n: fotos.length }]} />
 
   if (!dias.length) {
-    return <>{abas}{cartaoHoje}<div className="card"><Vazio icone="diario" titulo="Nenhum diário lançado nesta obra ainda." texto="Toque em Lançar no diário para registrar o dia de hoje." /></div></>
+    return <>{abas}{cartaoHoje}<div className="card"><Vazio icone="diario" titulo="Nenhum diário lançado nesta obra ainda." texto={lanca ? 'Toque em Lançar no diário para registrar o dia de hoje.' : 'Os registros da equipe aparecem aqui, com as fotos.'} /></div></>
   }
 
   if (aba === 'fotos') {

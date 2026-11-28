@@ -111,3 +111,13 @@ Uma linha por item aprovado na página de testes: data · o que mudou · o que p
 - 27/11/2026 · Caixa geral · Tocar na Empresa (sem obra) abre só a lista das notas dela, com a obra do topo inalterada.
 - 27/11/2026 · Financeiro · Aporte de sócio só aparece no Lançar nota quando a obra é a Empresa.
 - 27/11/2026 · Financeiro · No Lançar nota, a Conta que sai da lista (aporte depois de trocar a obra) fica marcada no campo e não salva; nota normal continua salvando.
+- 27/11/2026 · Tipos de usuário · Pessoas libera Contador (todas as obras, sem marcar obra), Financeiro e Cliente (recusado sem obra marcada; aparece em Quem está nesta obra).
+- 27/11/2026 · Tipos de usuário · Contador entra no Financeiro só para ler: nota abre em folha de leitura com a foto, sem Marcar recebida, Nova parcela, Transferir ou Informar saldo; vê as duas obras com números próprios.
+- 27/11/2026 · Tipos de usuário · Financeiro lança nota que fica gravada depois do F5 e aparece para o Engenheiro; sem Hoje, Frentes, Diário, Materiais, Obras e Pessoas; Caixa geral com todas as obras.
+- 27/11/2026 · Tipos de usuário · Cliente vê só o Apto 501, sem dinheiro: frente com Avanço e Fotos, sem botões; diário com fotos, sem lançar.
+- 27/11/2026 · Tipos de usuário · Mestre e Engenheiro continuam como antes.
+- 27/11/2026 · Tipos de usuário · Financeiro cadastra contrato de empreiteiro na aba Empreiteiros (só frentes sem contrato), edita (recusa valor abaixo do pago) e exclui (recusa contrato com pagamento); o contrato fica gravado depois do F5 e aparece na frente para o Engenheiro.
+- 27/11/2026 · Tipos de usuário · Contador sem acesso à tabela frentes continua vendo o nome do serviço nos contratos e no filtro, só para ler; o Engenheiro continua abrindo o contrato pela frente.
+- 27/11/2026 · Tipos de usuário · Cliente não vê Ocorrência no diário (nem a foto dela) e não vê o comentário de devolução da frente; Mestre e Engenheiro continuam vendo.
+- 27/11/2026 · Tipos de usuário · Frentes, Hoje e detalhe da frente continuam abrindo para Engenheiro e Mestre nas duas obras depois de a leitura passar pela função do banco.
+- 28/11/2026 · Tipos de usuário · Financeiro volta a ver a lista Frente no Lançar nota nas duas obras e continua cadastrando e excluindo contrato (conserto da migration 16).

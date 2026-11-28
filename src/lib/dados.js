@@ -18,7 +18,7 @@ const d = USAR_MOCK ? mock : real
 export const {
   definirObraAtual, contasDeExemplo, obterPerfil, retomarSessao, sairDaConta, entrar, criarConta,
   listarObras, salvarObra, excluirObra, adicionarNaObra, removerDaObra,
-  listarFrentes, obterFrente, salvarFrente, excluirFrente, aprovarFrente, devolverFrente, marcarFrentePronta,
+  listarFrentes, listarNomesDasFrentes, obterFrente, salvarFrente, excluirFrente, aprovarFrente, devolverFrente, marcarFrentePronta,
   listarRegistros, listarFotos, salvarRegistro, excluirRegistro, listarMateriais, salvarMaterial, excluirMaterial, mudarSituacaoMaterial,
   listarContratos, listarLancamentos, salvarContrato, excluirContrato, marcarParcelaRecebida,
   obterLancamento, salvarLancamento, salvarParcela, excluirLancamento, linkComprovante, listarFornecedores, salvarFornecedor, excluirFornecedor,

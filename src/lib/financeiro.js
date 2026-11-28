@@ -37,6 +37,10 @@ export const pagamentosDoContrato = (contratoId, lancamentos) =>
 export const pagoDoContrato = (contratoId, lancamentos) => soma(pagamentosDoContrato(contratoId, lancamentos))
 
 // Contrato com nota ligada (paga ou prevista) não se apaga: a nota perderia o empreiteiro.
+// Um contrato por frente (o banco garante com unique): só estas podem ganhar contrato novo.
+export const frentesSemContrato = (frentes, contratos) =>
+  frentes.filter((f) => !contratos.some((c) => c.frente_id === f.id))
+
 export const MSG_CONTRATO_COM_PAGAMENTO = 'Este contrato já tem pagamentos lançados. Exclua os pagamentos antes, ou só edite o contrato.'
 
 // Editar o contrato: o valor não pode ficar abaixo do que já foi pago (decisão de 25/11: recusar com aviso).

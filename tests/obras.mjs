@@ -1,5 +1,5 @@
 // Cadastro de obras: ordem da lista, código repetido, exclusão e quem entra/sai.
-import { codigoEmUso, erroAoRemover, mestresDaObra, obraTemRegistros, obrasDoCadastro, podeEntrarNaObra } from '../src/lib/obras.js'
+import { codigoEmUso, erroAoRemover, pessoasDaObra, obraTemRegistros, obrasDoCadastro, podeEntrarNaObra } from '../src/lib/obras.js'
 import * as mock from '../src/lib/mockData.js'
 
 let ok = 0
@@ -33,8 +33,14 @@ conferir('Mestre desativado não entra', podeEntrarNaObra({ ...mestre, ativo: fa
 conferir('Engenheiro não aparece para adicionar', podeEntrarNaObra({ ...mestre, role: 'Engenheiro' }, [], 'o2'), false)
 conferir('conta Aguardando não aparece para adicionar', podeEntrarNaObra({ ...mestre, role: 'Aguardando' }, [], 'o2'), false)
 
-conferir('lista da obra mostra só os Mestres dela',
-  mestresDaObra([{ ...mestre, obra_ids: ['o1'] }, { id: 'x', role: 'Engenheiro', obra_ids: ['o1'] }, { id: 'y', role: 'Mestre', obra_ids: ['o2'] }], 'o1').map((p) => p.id), ['m'])
+conferir('Cliente fora da obra pode entrar', podeEntrarNaObra({ ...mestre, role: 'Cliente' }, [], 'o2'), true)
+conferir('Financeiro e Contador não aparecem para adicionar (veem todas)',
+  [podeEntrarNaObra({ ...mestre, role: 'Financeiro' }, [], 'o2'), podeEntrarNaObra({ ...mestre, role: 'Contador' }, [], 'o2')], [false, false])
+
+conferir('lista da obra mostra só os Mestres e Clientes dela',
+  pessoasDaObra([{ ...mestre, obra_ids: ['o1'] }, { id: 'x', role: 'Engenheiro', obra_ids: ['o1'] }, { id: 'y', role: 'Mestre', obra_ids: ['o2'] },
+    { id: 'c', role: 'Cliente', obra_ids: ['o1'] }, { id: 'f', role: 'Financeiro', obra_ids: ['o1'] }], 'o1').map((p) => p.id), ['m', 'c'])
+conferir('Contador não sai de obra (vê todas)', typeof erroAoRemover({ ...mestre, role: 'Contador' }, [], 'o1'), 'string')
 
 conferir('Mestre com duas obras sai de uma', erroAoRemover(mestre, ['o1', 'o2'], 'o2'), null)
 conferir('única obra aberta do Mestre não sai (ele ficaria sem nada)', typeof erroAoRemover(mestre, ['o2'], 'o2'), 'string')

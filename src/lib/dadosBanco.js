@@ -17,7 +17,7 @@ import { normalizarEmail, obrasDoAcesso, podeGerenciar } from './pessoas.js'
 import { CAMPOS_CONTRATO, CAMPOS_CRIAR_CONTA, CAMPOS_FRENTE, CAMPOS_OBRA, paraDinheiro, validar } from './formularios.js'
 import { camposDaFrente, podeEditarFrente } from './frentes.js'
 import { erroAoRemover, podeEntrarNaObra } from './obras.js'
-import { ehEngenheiro, ehMestre, podeEditarRegistro } from './permissoes.js'
+import { ehEngenheiro, lancaNoCanteiro, mexeDinheiro, podeEditarRegistro } from './permissoes.js'
 import { MSG_SEM_PERMISSAO, traduzirErro } from './errosBanco.js'
 import { caminhoFoto, camposDoRegistro } from './diario.js'
 import { camposDoMaterial, erroAoMudarSituacao } from './materiais.js'
@@ -76,6 +76,11 @@ const comAutor = async (lista) => {
 
 function exigirEngenheiro(quem, oQue = 'cadastra obras') {
   if (!ehEngenheiro(quem)) throw new Error(`Só o Engenheiro ${oQue}.`)
+}
+
+// Dinheiro: o Engenheiro e o Financeiro gravam; o Contador só olha (a RLS recusa do mesmo jeito).
+function exigirDinheiro(quem, oQue) {
+  if (!mexeDinheiro(quem)) throw new Error(`Sua conta não ${oQue}.`)
 }
 
 // ---------- sessão ----------
@@ -195,10 +200,16 @@ export const removerDaObra = (quem, obraId, profileId) => responder(async () => 
 })
 
 // ---------- frentes ----------
-export const listarFrentes = () => responder(() => daObraAtual('frentes'))
+// Leitura de frente passa pela função do banco (migration 15): o Cliente não lê a tabela, e para ele
+// o comentário de devolução vem vazio. Gravar continua na tabela (só o Engenheiro grava).
+const frentesDaObraAtual = () => banco().rpc('frentes_da_obra', { p_obra: exigirObra() })
+export const listarFrentes = () => responder(() => todas(frentesDaObraAtual))
+// Só id, serviço e ambiente da obra atual, para quem vê dinheiro (o Contador não lê a tabela frentes;
+// a função do banco devolve só o nome, migration 14).
+export const listarNomesDasFrentes = () => responder(async () => ok(await banco().rpc('nomes_das_frentes', { p_obra: exigirObra() })))
 
 async function frenteDaObra(id, colunas = '*') {
-  const f = ok(await banco().from('frentes').select(colunas).eq('id', id).eq('obra_id', exigirObra()).maybeSingle())
+  const f = ok(await frentesDaObraAtual().select(colunas).eq('id', id).maybeSingle())
   if (!f) throw new Error('Esta frente não é da obra escolhida.')
   return f
 }
@@ -247,7 +258,7 @@ export const devolverFrente = (quem, id, comentario) => responder(async () => {
 
 // O Mestre não edita frente: a função do banco só muda a situação (e confere a obra).
 export const marcarFrentePronta = (quem, id) => responder(async () => {
-  if (!ehEngenheiro(quem) && !ehMestre(quem)) throw new Error('Sua conta não pode marcar frentes como prontas.')
+  if (!lancaNoCanteiro(quem)) throw new Error('Sua conta não pode marcar frentes como prontas.')
   await frenteDaObra(id)
   ok(await banco().rpc('marcar_frente_pronta', { p_frente: id }))
   return frenteDaObra(id)
@@ -278,7 +289,7 @@ async function registroDaObra(id) {
 // o registro novo já mexe na frente (gatilho do banco): se uma foto falhar, nada foi gravado
 // e os arquivos que subiram são removidos.
 export const salvarRegistro = (quem, id, tipo, valores, fotos = []) => responder(async () => {
-  if (!ehEngenheiro(quem) && !ehMestre(quem)) throw new Error('Sua conta não pode lançar no diário.')
+  if (!lancaNoCanteiro(quem)) throw new Error('Sua conta não pode lançar no diário.')
   const obraId = exigirObra()
   const anterior = id ? await registroDaObra(id) : null
   if (anterior && !podeEditarRegistro(quem, anterior, hoje())) throw new Error('Este registro não pode mais ser editado por você.')
@@ -368,13 +379,13 @@ export const mudarSituacaoMaterial = (quem, id, situacao) => responder(async () 
   return ok(await banco().from('materiais').select('*').eq('id', id).single())
 })
 
-// ---------- dinheiro (só o Engenheiro chega nas telas que chamam isto; a RLS garante) ----------
+// ---------- dinheiro (Engenheiro e Financeiro gravam, o Contador só lê; a RLS garante) ----------
 export const listarContratos = () => responder(() => daObraAtual('contratos_empreiteiros'))
 export const listarLancamentos = () => responder(() => daObraAtual('lancamentos'))
 
 // Um contrato por frente (é dele que sai o "falta pagar" do empreiteiro). Com `id`, edita.
 export const salvarContrato = (quem, frenteId, valores, id) => responder(async () => {
-  exigirEngenheiro(quem, 'cadastra contratos')
+  exigirDinheiro(quem, 'cadastra contratos')
   if (Object.keys(validar(CAMPOS_CONTRATO, valores)).length) throw new Error('Confira os campos marcados.')
   const campos = {
     empreiteiro: valores.empreiteiro.trim(), valor_contratado: paraDinheiro(valores.valor_contratado),
@@ -393,14 +404,15 @@ export const salvarContrato = (quem, frenteId, valores, id) => responder(async (
 })
 
 export const excluirContrato = (quem, id) => responder(async () => {
-  exigirEngenheiro(quem, 'exclui contratos')
+  exigirDinheiro(quem, 'exclui contratos')
   // Contrato com nota ligada: a chave estrangeira recusa (errosBanco traduz).
   const apagados = ok(await banco().from('contratos_empreiteiros').delete().eq('id', id).eq('obra_id', exigirObra()).select('id'))
   if (!apagados.length) throw new Error('Este contrato não é da obra escolhida.')
   return { id }
 })
 
-export const marcarParcelaRecebida = (id, valores) => responder(async () => {
+export const marcarParcelaRecebida = (quem, id, valores) => responder(async () => {
+  exigirDinheiro(quem, 'marca parcelas como recebidas')
   const { campos, erro } = camposDoRecebimento(valores)
   if (erro) throw new Error(erro)
   const l = ok(await banco().from('lancamentos').update(campos)
@@ -428,7 +440,7 @@ export const obterLancamento = (id) => responder(() => lancamentoDaObra(id))
 // (valores.obra_id); edição fica na obra dela. `foto` = { blob } JPEG, opcional.
 // Ordem: arquivo → linha. Se a linha falhar, o arquivo que subiu é removido.
 export const salvarLancamento = (quem, id, valores, foto = null) => responder(async () => {
-  exigirEngenheiro(quem, 'lança notas')
+  exigirDinheiro(quem, 'lança notas')
   const empresa = await idDaEmpresa()
   const anterior = id ? await lancamentoDaObra(id, empresa) : null
   const { campos, erro } = camposDaNota(valores, exigirObra(), anterior, empresa)
@@ -452,7 +464,7 @@ export const salvarLancamento = (quem, id, valores, foto = null) => responder(as
 })
 
 export const salvarParcela = (quem, valores) => responder(async () => {
-  exigirEngenheiro(quem, 'cadastra parcelas')
+  exigirDinheiro(quem, 'cadastra parcelas')
   const { campos, erro } = camposDaParcela(valores)
   if (erro) throw new Error(erro)
   return ok(await banco().from('lancamentos').insert({ ...campos, obra_id: exigirObra(), autor_id: quem.id }).select().single())
@@ -460,7 +472,7 @@ export const salvarParcela = (quem, valores) => responder(async () => {
 
 // Apaga a linha e depois a foto da nota.
 export const excluirLancamento = (quem, id) => responder(async () => {
-  exigirEngenheiro(quem, 'exclui lançamentos')
+  exigirDinheiro(quem, 'exclui lançamentos')
   const l = await lancamentoDaObra(id)
   const apagados = ok(await banco().from('lancamentos').delete().eq('id', id).eq('obra_id', l.obra_id).select('id'))
   if (!apagados.length) throw new Error(MSG_SEM_PERMISSAO)
@@ -487,7 +499,7 @@ export const listarFornecedores = () => responder(async () => juntarFornecedores
 
 // Nome repetido: o índice fornecedores_nome_unico recusa, e errosBanco.js traduz.
 export const salvarFornecedor = (quem, id, valores) => responder(async () => {
-  exigirEngenheiro(quem, 'cadastra fornecedores')
+  exigirDinheiro(quem, 'cadastra fornecedores')
   const { campos, erro } = camposDoFornecedor(valores)
   if (erro) throw new Error(erro)
   const f = id
@@ -499,7 +511,7 @@ export const salvarFornecedor = (quem, id, valores) => responder(async () => {
 
 // Nota antiga guarda o nome em texto: excluir o cadastro não mexe nela.
 export const excluirFornecedor = (quem, id) => responder(async () => {
-  exigirEngenheiro(quem, 'cadastra fornecedores')
+  exigirDinheiro(quem, 'cadastra fornecedores')
   const apagados = ok(await banco().from('fornecedores').delete().eq('id', id).select('id'))
   if (!apagados.length) throw new Error(MSG_SEM_PERMISSAO)
   return { id }
@@ -517,14 +529,14 @@ export const listarCaixaGeral = () => responder(async () => ({
 // Saldo inicial e transferência entre bancos: da empresa, não de obra (vão na obra interna;
 // a política do banco recusa qualquer outra).
 export const salvarMovimentoBanco = (quem, tipo, valores) => responder(async () => {
-  exigirEngenheiro(quem, 'mexe no saldo dos bancos')
+  exigirDinheiro(quem, 'mexe no saldo dos bancos')
   const { campos, erro } = camposDoMovimento(tipo, valores)
   if (erro) throw new Error(erro)
   return ok(await banco().from('movimentos_banco').insert({ ...campos, obra_id: await idDaEmpresa(), autor_id: quem.id }).select().single())
 })
 
 export const excluirMovimentoBanco = (quem, id) => responder(async () => {
-  exigirEngenheiro(quem, 'mexe no saldo dos bancos')
+  exigirDinheiro(quem, 'mexe no saldo dos bancos')
   const apagados = ok(await banco().from('movimentos_banco').delete().eq('id', id).select('id'))
   if (!apagados.length) throw new Error(MSG_SEM_PERMISSAO)
   return { id }

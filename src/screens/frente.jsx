@@ -10,7 +10,7 @@ import { useCarregar, juntar } from '../lib/usarDados.js'
 import { ambientesDe, diasSemAndar, nivelFrente, podeEditarFrente, podeMarcarPronta, textoLimite } from '../lib/frentes.js'
 import { pagamentosDoContrato, pagoDoContrato } from '../lib/financeiro.js'
 import { CAMPOS_CONTRATO, CAMPOS_FRENTE } from '../lib/formularios.js'
-import { ehEngenheiro } from '../lib/permissoes.js'
+import { ehEngenheiro, lancaNoCanteiro } from '../lib/permissoes.js'
 import { brl, dataCompleta, diaRelativo } from '../lib/formato.js'
 import { avisar, BotaoVoltar, Carregando, Chip, ErroCarga, Folha, Formulario, GradeFotos, Stat, Vazio } from '../components/index.jsx'
 import { FolhaDevolver, LinhaMaterial, ReguaPrazo } from '../components/pecas.jsx'
@@ -20,6 +20,7 @@ const COR_TEXTO = { critico: 'var(--red-ink)', atencao: 'var(--amb-ink)', ok: 'i
 export default function Frente({ goto, voltar: volta, params, profile }) {
   const hoje = hojeDe()
   const engenheiro = ehEngenheiro(profile)
+  const lanca = lancaNoCanteiro(profile) // o Cliente só olha: sem Marcar pronta e sem Materiais
   const [aba, setAba] = useState('avanco')
   const [folha, setFolha] = useState(null) // 'editar' | 'devolver' | 'pronta' | 'contrato' | 'excluir' | 'excluirContrato'
   const [enviando, setEnviando] = useState(false)
@@ -27,7 +28,7 @@ export default function Frente({ goto, voltar: volta, params, profile }) {
     frente: obterFrente(params.id),
     registros: listarRegistros(),
     fotos: listarFotos(),
-    materiais: listarMateriais(),
+    materiais: lanca ? listarMateriais() : Promise.resolve({ data: [], erro: null }),
     // Só o Engenheiro: dinheiro e as frentes (para sugerir ambientes no Editar).
     ...(engenheiro ? { contratos: listarContratos(), lancamentos: listarLancamentos(), frentes: listarFrentes() } : {}),
   }))
@@ -78,7 +79,7 @@ export default function Frente({ goto, voltar: volta, params, profile }) {
     goto('frentes')
   }
 
-  const abas = [['avanco', 'Avanço'], ['fotos', 'Fotos'], ['materiais', 'Materiais'], ...(engenheiro ? [['contrato', 'Contrato']] : [])]
+  const abas = [['avanco', 'Avanço'], ['fotos', 'Fotos'], ...(lanca ? [['materiais', 'Materiais']] : []), ...(engenheiro ? [['contrato', 'Contrato']] : [])]
 
   let corpo
   if (aba === 'avanco') {
@@ -156,7 +157,7 @@ export default function Frente({ goto, voltar: volta, params, profile }) {
             <button className="btn sec" onClick={() => setFolha('devolver')}>Devolver</button>
           </>}
           {f.situacao === 'Aguardando aprovação' && !engenheiro && <div className="aviso" style={{ gridColumn: '1 / -1', padding: 0 }}>Pronta. Aguardando a aprovação do engenheiro.</div>}
-          {podeMarcarPronta(f) && <button className="btn pri" style={{ gridColumn: '1 / -1' }} onClick={() => setFolha('pronta')}>Marcar como pronta</button>}
+          {lanca && podeMarcarPronta(f) && <button className="btn pri" style={{ gridColumn: '1 / -1' }} onClick={() => setFolha('pronta')}>Marcar como pronta</button>}
           {engenheiro && podeEditarFrente(f) && <button className="btn sec" onClick={() => setFolha('editar')}>Editar</button>}
           {engenheiro && <button className="btn sec" onClick={() => setFolha('excluir')}>Excluir</button>}
         </div>

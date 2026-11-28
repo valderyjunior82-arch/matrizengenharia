@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useObra } from '../lib/ObraContext.jsx'
 import { definirAtivo, listarPessoas, salvarAcesso } from '../lib/dados.js'
 import { useCarregar } from '../lib/usarDados.js'
-import { erroDeAcesso, podeGerenciar } from '../lib/pessoas.js'
+import { DESCRICAO_DO_PAPEL, erroDeAcesso, obrasDaPessoa, podeGerenciar, precisaDeObra } from '../lib/pessoas.js'
 import { obrasDoSeletor } from '../lib/escopo.js'
 import { PAPEIS_DE_ACESSO } from '../lib/vocabulario.js'
 import { avisar, Cartao, Carregando, Chip, ErroCarga, Folha, Vazio } from '../components/index.jsx'
@@ -41,7 +41,7 @@ export default function Pessoas({ profile }) {
             <>
               <div className="b">
                 <div className="t">{p.nome}{p.id === profile.id && ' (você)'}</div>
-                <div className="m">{p.email} · {p.role === 'Engenheiro' ? 'todas as obras' : p.obras.join(' · ') || 'nenhuma obra'}</div>
+                <div className="m">{p.email} · {obrasDaPessoa(p)}</div>
               </div>
               <div className="r">
                 <Chip nivel={p.role === 'Engenheiro' ? 'info' : 'neutro'}>{p.role}</Chip>
@@ -52,7 +52,7 @@ export default function Pessoas({ profile }) {
           return podeGerenciar(profile, p)
             ? <button key={p.id} className="li" onClick={() => setAberta(p)}>{miolo}</button>
             : <div key={p.id} className="li">{miolo}</div>
-        }) : <Vazio icone="pessoas" titulo="Só você por enquanto." texto="Peça para o mestre criar a conta pelo link do sistema e libere aqui." />}
+        }) : <Vazio icone="pessoas" titulo="Só você por enquanto." texto="Peça para a pessoa criar a conta pelo link do sistema e libere aqui." />}
       </Cartao>
 
       {aberta && <FolhaAcesso pessoa={aberta} profile={profile} obras={obrasDoSeletor(todas)} onFechar={() => setAberta(null)} onPronto={pronto} />}
@@ -86,11 +86,11 @@ function FolhaAcesso({ pessoa, profile, obras, onFechar, onPronto }) {
           <select id="papel" value={papel} onChange={(e) => setPapel(e.target.value)}>
             {PAPEIS_DE_ACESSO.map((p) => <option key={p}>{p}</option>)}
           </select>
-          <div className="ajuda">{papel === 'Mestre' ? 'O Mestre nunca vê valor em dinheiro e só vê as obras marcadas.' : 'O Engenheiro vê todas as obras e o dinheiro.'}</div>
+          <div className="ajuda">{DESCRICAO_DO_PAPEL[papel]}</div>
         </div>
-        {papel === 'Mestre' && (
+        {precisaDeObra(papel) && (
           <fieldset className="campo" style={{ border: 0 }}>
-            <legend style={{ fontWeight: 600, marginBottom: 6 }}>Em quais obras ele entra</legend>
+            <legend style={{ fontWeight: 600, marginBottom: 6 }}>Em quais obras {papel === 'Cliente' ? 'o cliente' : 'ele'} entra</legend>
             {obras.map((o) => (
               <label key={o.id} className="opt" style={{ cursor: 'pointer' }}>
                 <input type="checkbox" checked={obraIds.includes(o.id)} onChange={() => marcar(o.id)} style={{ width: 22, height: 22, minHeight: 0 }} />

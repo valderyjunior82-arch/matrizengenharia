@@ -10,7 +10,7 @@ import { emailEmUso, normalizarEmail, obrasDoAcesso, papelDaNovaConta, podeGeren
 import { CAMPOS_CONTRATO, CAMPOS_CRIAR_CONTA, CAMPOS_FRENTE, CAMPOS_OBRA, paraDinheiro, validar } from './formularios.js'
 import { camposDaFrente, frenteTemRegistros, MSG_FRENTE_COM_REGISTROS, MSG_FRENTE_DE_OUTRA_OBRA, podeEditarFrente, podeMarcarPronta } from './frentes.js'
 import { codigoEmUso, erroAoRemover, MSG_OBRA_COM_REGISTROS, obraTemRegistros, podeEntrarNaObra } from './obras.js'
-import { ehEngenheiro, ehMestre, podeEditarRegistro } from './permissoes.js'
+import { ehEngenheiro, lancaNoCanteiro, mexeDinheiro, podeEditarRegistro } from './permissoes.js'
 import { caminhoFoto, camposDoRegistro, frenteAposAvanco, mexeNaFrente } from './diario.js'
 import { camposDoMaterial, erroAoMudarSituacao, materialTemNota, MSG_MATERIAL_COM_NOTA } from './materiais.js'
 import { camposDaNota, camposDaParcela, camposDoMovimento, camposDoRecebimento, erroValorDoContrato, MSG_CONTRATO_COM_PAGAMENTO, pagoDoContrato } from './financeiro.js'
@@ -95,6 +95,11 @@ function exigirEngenheiro(quem, oQue = 'cadastra obras') {
   if (!ehEngenheiro(quem)) throw new Error(`Só o Engenheiro ${oQue}.`)
 }
 
+// Dinheiro: o Engenheiro e o Financeiro gravam; o Contador só olha (a RLS recusa do mesmo jeito).
+function exigirDinheiro(quem, oQue) {
+  if (!mexeDinheiro(quem)) throw new Error(`Sua conta não ${oQue}.`)
+}
+
 function obraDoCadastro(id) {
   const o = db.obras.find((x) => x.id === id && !x.interna)
   if (!o) throw new Error('Obra não encontrada.')
@@ -149,6 +154,9 @@ export const removerDaObra = (quem, obraId, profileId) => responder(() => {
 
 // ---------- frentes ----------
 export const listarFrentes = () => responder(() => daObra(db.frentes, exigirObra()))
+// Só id, serviço e ambiente (no banco, a função nomes_das_frentes; o Contador não lê frentes).
+export const listarNomesDasFrentes = () => responder(() =>
+  daObra(db.frentes, exigirObra()).map(({ id, servico, ambiente }) => ({ id, servico, ambiente })))
 
 export const obterFrente = (id) => responder(() => {
   const f = daObra(db.frentes, exigirObra()).find((x) => x.id === id)
@@ -205,7 +213,7 @@ export const devolverFrente = (quem, id, comentario) => responder(() => {
 })
 
 export const marcarFrentePronta = (quem, id) => responder(() => {
-  if (!ehEngenheiro(quem) && !ehMestre(quem)) throw new Error('Sua conta não pode marcar frentes como prontas.')
+  if (!lancaNoCanteiro(quem)) throw new Error('Sua conta não pode marcar frentes como prontas.')
   const f = frenteDaObra(id)
   if (!podeMarcarPronta(f)) throw new Error('Esta frente já está pronta.')
   Object.assign(f, { situacao: 'Aguardando aprovação', marcada_pronta_por: quem.id, marcada_pronta_em: new Date().toISOString() })
@@ -224,7 +232,7 @@ function registroDaObra(id) {
 
 // Mesmo contrato do banco. No mock a foto não sobe: guarda o link de prévia que a tela criou ({ previa }).
 export const salvarRegistro = (quem, id, tipo, valores, fotos = []) => responder(() => {
-  if (!ehEngenheiro(quem) && !ehMestre(quem)) throw new Error('Sua conta não pode lançar no diário.')
+  if (!lancaNoCanteiro(quem)) throw new Error('Sua conta não pode lançar no diário.')
   const anterior = id ? registroDaObra(id) : null
   if (anterior && !podeEditarRegistro(quem, anterior, hoje())) throw new Error('Este registro não pode mais ser editado por você.')
   const { campos, erro } = camposDoRegistro(anterior?.tipo ?? tipo, anterior ? { ...valores, frente_id: anterior.frente_id } : valores)
@@ -292,7 +300,7 @@ export const mudarSituacaoMaterial = (quem, id, situacao) => responder(() => {
   return m
 })
 
-// ---------- dinheiro (só o Engenheiro chega nas telas que chamam isto) ----------
+// ---------- dinheiro (Engenheiro e Financeiro gravam, o Contador só lê) ----------
 export const listarContratos = () => responder(() => daObra(db.contratos, exigirObra()))
 export const listarLancamentos = () => responder(() => daObra(db.lancamentos, exigirObra()))
 
@@ -304,7 +312,7 @@ function contratoDaObra(id) {
 }
 
 export const salvarContrato = (quem, frenteId, valores, id) => responder(() => {
-  exigirEngenheiro(quem, 'cadastra contratos')
+  exigirDinheiro(quem, 'cadastra contratos')
   if (Object.keys(validar(CAMPOS_CONTRATO, valores)).length) throw new Error('Confira os campos marcados.')
   const campos = {
     empreiteiro: valores.empreiteiro.trim(), valor_contratado: paraDinheiro(valores.valor_contratado),
@@ -324,7 +332,7 @@ export const salvarContrato = (quem, frenteId, valores, id) => responder(() => {
 })
 
 export const excluirContrato = (quem, id) => responder(() => {
-  exigirEngenheiro(quem, 'exclui contratos')
+  exigirDinheiro(quem, 'exclui contratos')
   contratoDaObra(id)
   // No banco, a chave estrangeira das notas recusa do mesmo jeito.
   if (db.lancamentos.some((l) => l.contrato_empreiteiro_id === id)) throw new Error(MSG_CONTRATO_COM_PAGAMENTO)
@@ -332,7 +340,8 @@ export const excluirContrato = (quem, id) => responder(() => {
   return { id }
 })
 
-export const marcarParcelaRecebida = (id, valores) => responder(() => {
+export const marcarParcelaRecebida = (quem, id, valores) => responder(() => {
+  exigirDinheiro(quem, 'marca parcelas como recebidas')
   const l = daObra(db.lancamentos, exigirObra()).find((x) => x.id === id)
   if (!l) throw new Error('Esta parcela não é da obra escolhida.')
   const { campos, erro } = camposDoRecebimento(valores)
@@ -353,7 +362,7 @@ export const obterLancamento = (id) => responder(() => lancamentoDaObra(id))
 
 // Mesmo contrato do banco. No mock a foto não sobe: o caminho guarda o link de prévia ({ previa }).
 export const salvarLancamento = (quem, id, valores, foto = null) => responder(() => {
-  exigirEngenheiro(quem, 'lança notas')
+  exigirDinheiro(quem, 'lança notas')
   const anterior = id ? lancamentoDaObra(id) : null
   const { campos, erro } = camposDaNota(valores, exigirObra(), anterior, db.obras.find((o) => o.interna).id)
   if (erro) throw new Error(erro)
@@ -371,7 +380,7 @@ export const salvarLancamento = (quem, id, valores, foto = null) => responder(()
 })
 
 export const salvarParcela = (quem, valores) => responder(() => {
-  exigirEngenheiro(quem, 'cadastra parcelas')
+  exigirDinheiro(quem, 'cadastra parcelas')
   const { campos, erro } = camposDaParcela(valores)
   if (erro) throw new Error(erro)
   const l = {
@@ -383,7 +392,7 @@ export const salvarParcela = (quem, valores) => responder(() => {
 })
 
 export const excluirLancamento = (quem, id) => responder(() => {
-  exigirEngenheiro(quem, 'exclui lançamentos')
+  exigirDinheiro(quem, 'exclui lançamentos')
   lancamentoDaObra(id)
   db.lancamentos = db.lancamentos.filter((l) => l.id !== id)
   return { id }
@@ -398,7 +407,7 @@ export const listarFornecedores = () => responder(() => juntarFornecedores(db.fo
   fornecedoresDe([...db.lancamentos, ...db.materiais.map(({ fornecedor }) => ({ fornecedor }))])))
 
 export const salvarFornecedor = (quem, id, valores) => responder(() => {
-  exigirEngenheiro(quem, 'cadastra fornecedores')
+  exigirDinheiro(quem, 'cadastra fornecedores')
   const { campos, erro } = camposDoFornecedor(valores)
   if (erro) throw new Error(erro)
   if (nomeEmUso(db.fornecedores, campos.nome, id)) throw new Error(MSG_NOME_EM_USO)
@@ -414,7 +423,7 @@ export const salvarFornecedor = (quem, id, valores) => responder(() => {
 
 // Nota antiga guarda o nome em texto: excluir o cadastro não mexe nela.
 export const excluirFornecedor = (quem, id) => responder(() => {
-  exigirEngenheiro(quem, 'cadastra fornecedores')
+  exigirDinheiro(quem, 'cadastra fornecedores')
   db.fornecedores = db.fornecedores.filter((f) => f.id !== id)
   return { id }
 })
@@ -426,7 +435,7 @@ export const listarCaixaGeral = () => responder(() => ({ obras: db.obras, lancam
 
 // Saldo inicial e transferência entre bancos: da empresa, não de obra (vão na obra interna).
 export const salvarMovimentoBanco = (quem, tipo, valores) => responder(() => {
-  exigirEngenheiro(quem, 'mexe no saldo dos bancos')
+  exigirDinheiro(quem, 'mexe no saldo dos bancos')
   const { campos, erro } = camposDoMovimento(tipo, valores)
   if (erro) throw new Error(erro)
   const m = { id: crypto.randomUUID(), obra_id: db.obras.find((o) => o.interna).id, autor_id: quem.id, ...campos }
@@ -435,7 +444,7 @@ export const salvarMovimentoBanco = (quem, tipo, valores) => responder(() => {
 })
 
 export const excluirMovimentoBanco = (quem, id) => responder(() => {
-  exigirEngenheiro(quem, 'mexe no saldo dos bancos')
+  exigirDinheiro(quem, 'mexe no saldo dos bancos')
   db.movimentos = db.movimentos.filter((m) => m.id !== id)
   return { id }
 })

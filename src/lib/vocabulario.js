@@ -2,9 +2,12 @@
 // (com acento e maiúscula). Se uma divergir, o salvamento falha em silêncio.
 // Dono único: nenhuma tela escreve estes textos à mão.
 
-export const PAPEIS = ['Aguardando', 'Engenheiro', 'Mestre', 'Cliente']
-// O que o Engenheiro pode escolher ao liberar alguém (Cliente entra na semana 2).
-export const PAPEIS_DE_ACESSO = ['Engenheiro', 'Mestre']
+// Financeiro e Contador entraram em 27/11/2026 (migration 13); o Cliente passou a valer nesse dia.
+export const PAPEIS = ['Aguardando', 'Engenheiro', 'Mestre', 'Cliente', 'Financeiro', 'Contador']
+// O que o Engenheiro pode escolher ao liberar alguém.
+export const PAPEIS_DE_ACESSO = ['Engenheiro', 'Mestre', 'Financeiro', 'Contador', 'Cliente']
+// Quem só entra nas obras marcadas (tabela membros). Os outros veem todas.
+export const PAPEIS_COM_OBRA = ['Mestre', 'Cliente']
 export const SITUACOES_OBRA = ['Em andamento', 'Parada', 'Concluída']
 export const SITUACOES_FRENTE = ['Não iniciada', 'Em andamento', 'Parada', 'Aguardando aprovação', 'Concluída']
 export const TIPOS_REGISTRO = ['Avanço', 'Equipe', 'Ocorrência']

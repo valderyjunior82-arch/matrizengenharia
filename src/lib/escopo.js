@@ -1,4 +1,6 @@
 // O app é MULTI-OBRA. Estas são as regras que impedem uma obra de ver a outra.
+import { veDinheiro } from './permissoes.js'
+import { precisaDeObra } from './pessoas.js'
 
 // Todo dado de lançamento passa por aqui: sem obra escolhida, não devolve nada.
 export function daObra(lista, obraId) {
@@ -6,11 +8,12 @@ export function daObra(lista, obraId) {
   return lista.filter((item) => item.obra_id === obraId)
 }
 
-// Quais obras a pessoa enxerga: o Engenheiro, todas; o Mestre, só as dele.
+// Quais obras a pessoa enxerga (o mesmo que a RLS de obras, migration 13):
+// quem vê dinheiro, todas (o Caixa geral junta todas); Mestre e Cliente, só as marcadas.
 export function obrasVisiveis(obras, membros, profile) {
   if (!profile || !profile.ativo) return []
-  if (profile.role === 'Engenheiro') return obras
-  if (profile.role === 'Mestre') {
+  if (veDinheiro(profile)) return obras
+  if (precisaDeObra(profile.role)) {
     const minhas = new Set(membros.filter((m) => m.profile_id === profile.id).map((m) => m.obra_id))
     return obras.filter((o) => minhas.has(o.id) && !o.interna)
   }
