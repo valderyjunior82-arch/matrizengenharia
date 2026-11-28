@@ -14,12 +14,14 @@ export const SITUACOES_MATERIAL = [PEDIDO, 'A comprar', 'Comprado', 'Entregue']
 export const TIPOS_LANCAMENTO = ['Entrada', 'Saída']
 // Plano de contas (o campo se chama "categoria" no banco). "Outros" vale nos dois lados.
 // Combustível, Contador e Ferramenta entraram em 24/11 (migration 09), para os gastos da empresa.
-export const CONTAS_ENTRADA = ['Recebimento do cliente', 'Outros']
+// "Aporte de sócio" (26/11, migration 12): entra no banco, mas não é receita; o DRE deixa de fora.
+export const CONTA_APORTE = 'Aporte de sócio'
+export const CONTAS_ENTRADA = ['Recebimento do cliente', CONTA_APORTE, 'Outros']
 export const CONTAS_SAIDA = ['Mão de obra', 'Material', 'Serviço terceirizado', 'Taxa', 'Combustível', 'Contador', 'Ferramenta', 'Outros']
 export const CATEGORIAS = [...new Set([...CONTAS_ENTRADA, ...CONTAS_SAIDA])]
 export const SITUACOES_LANCAMENTO = ['Previsto', 'Realizado']
 export const PAGO_POR = ['Engenheiro', 'Cliente']
-export const FORMAS_PAGAMENTO = ['Pix', 'Dinheiro', 'Cartão', 'Boleto', 'Transferência']
+export const FORMAS_PAGAMENTO = ['Pix', 'Dinheiro', 'Cartão', 'Boleto', 'Transferência', 'Débito automático']
 // Onde o dinheiro está (decisão do engenheiro em 25/11). Mesmo texto do CHECK da migration 10.
 export const BANCOS = ['Dinheiro em espécie', 'Santander', 'Inter']
 

@@ -3,6 +3,7 @@
 // O saldo por banco também mora aqui: o banco é um só para todas as obras.
 import { useState } from 'react'
 import { useObra } from '../lib/ObraContext.jsx'
+import { idDaEmpresa } from '../lib/escopo.js'
 import { hoje as hojeDe } from '../lib/config.js'
 import { excluirMovimentoBanco, listarCaixaGeral, salvarMovimentoBanco } from '../lib/dados.js'
 import { useCarregar } from '../lib/usarDados.js'
@@ -35,7 +36,7 @@ export default function Caixa({ goto, profile }) {
   const obraDe = (id) => data.obras.find((o) => o.id === id)?.nome ?? ''
   // Abre o lançamento na obra dele. A "Empresa" não entra no seletor: a nota dela abre sem trocar de obra.
   const abrirLancamento = (l) => {
-    if (!data.obras.find((o) => o.id === l.obra_id)?.interna) trocarObra(l.obra_id)
+    if (l.obra_id !== idDaEmpresa(data.obras)) trocarObra(l.obra_id)
     goto('lancarNota', { id: l.id })
   }
 
@@ -127,8 +128,8 @@ export default function Caixa({ goto, profile }) {
 
       <Cartao titulo="Por obra">
         {c.porObra.map(({ obra, recebido, gasto, saldo, aReceber }) => (
-          <button key={obra.id} className="li" onClick={() => (obra.interna ? null : abrirObra(obra.id))} disabled={obra.interna}
-            style={obra.interna ? { opacity: 1, cursor: 'default' } : null}>
+          // A Empresa não vira obra atual (nada grava nela por engano): abre só a lista das notas dela (decisão do engenheiro em 27/11).
+          <button key={obra.id} className="li" onClick={() => (obra.interna ? setFolha({ empresa: obra }) : abrirObra(obra.id))}>
             <div className="b">
               <div className="t">{obra.nome}</div>
               <div className="m">{obra.interna ? `gasto ${brl(gasto)}` : `recebido ${brl(recebido)} · gasto ${brl(gasto)} · a receber ${brl(aReceber)}`}</div>
@@ -153,6 +154,17 @@ export default function Caixa({ goto, profile }) {
           {folha === 'Saldo inicial' && <div className="aviso">Digite o saldo como está no extrato no começo do dia. Daí em diante o app soma e subtrai os lançamentos desse banco. Informar de novo corrige o saldo.</div>}
           <Formulario campos={folha === 'Transferência' ? CAMPOS_TRANSFERENCIA : CAMPOS_SALDO_BANCO} inicial={{ data: hoje }}
             rotuloSalvar={folha === 'Transferência' ? 'Transferir' : 'Salvar saldo'} onCancelar={() => setFolha(null)} onSalvar={salvarMovimento} />
+        </Folha>
+      )}
+      {folha?.empresa && (
+        <Folha titulo={`${folha.empresa.nome} · notas`} onFechar={() => setFolha(null)}>
+          {!data.lancamentos.some((l) => l.obra_id === folha.empresa.id) && <div className="aviso">Nenhuma nota da empresa ainda. Em <b>Lançar nota</b>, escolha a obra <b>{folha.empresa.nome}</b>.</div>}
+          {data.lancamentos.filter((l) => l.obra_id === folha.empresa.id).sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : 0)).map((l) => (
+            <button key={l.id} className="li" onClick={() => abrirLancamento(l)}>
+              <div className="b"><div className="t">{l.descricao || l.categoria}</div><div className="m">{dataCompleta(l.data)} · {l.categoria}</div></div>
+              <div className="r"><span className="valor">{l.tipo === 'Entrada' ? '+' : '−'} {brl(l.valor)}</span></div>
+            </button>
+          ))}
         </Folha>
       )}
       {folha?.excluir && (

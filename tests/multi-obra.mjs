@@ -1,5 +1,5 @@
 // MULTI-OBRA: uma obra nunca vê a outra. Se este teste falhar, pare tudo.
-import { daObra, obraInicial, obrasDoSeletor, obrasVisiveis } from '../src/lib/escopo.js'
+import { daObra, idDaEmpresa, obraInicial, obrasDoSeletor, obrasVisiveis } from '../src/lib/escopo.js'
 import * as mock from '../src/lib/mockData.js'
 
 let ok = 0
@@ -32,6 +32,7 @@ conferir('obra 1 tem material', daObra(mock.mockMateriais, 'o1').length > 0, tru
 // 4. Quem enxerga o quê.
 const [eng, mestre, aguardando] = mock.mockProfiles
 conferir('Engenheiro vê todas, inclusive a Empresa', obrasVisiveis(mock.mockObras, mock.mockMembros, eng).length, 3)
+conferir('a Empresa é achada pela marca interna, não pelo nome', [idDaEmpresa(mock.mockObras), idDaEmpresa(mock.mockObras.filter((o) => !o.interna))], ['o-empresa', null])
 conferir('Mestre vê só as obras em que é membro, sem a Empresa',
   obrasVisiveis(mock.mockObras, mock.mockMembros, mestre).map((o) => o.id), ['o1', 'o2'])
 conferir('Mestre fora da obra 2 não a vê',

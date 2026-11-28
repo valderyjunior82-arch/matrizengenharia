@@ -104,3 +104,10 @@ Uma linha por item aprovado na página de testes: data · o que mudou · o que p
 - 25/11/2026 · Caixa geral · Excluir uma transferência com dois toques rápidos não mostra aviso de permissão.
 - 25/11/2026 · Painel do dia · Tocar num material do painel abre Materiais na aba dele; com pedido do Mestre esperando, Materiais abre em Aguardando, e volta a A comprar depois de recusar.
 - 26/11/2026 · Painel do dia · Trocar de obra com Materiais aberto pelo painel não leva a aba da obra anterior: o Apto 501 abre em Aguardando com o pedido do Mestre.
+- 26/11/2026 · Importação da planilha · Saldo por banco igual ao da planilha, com as transferências e saldos de partida; as 6 obras da planilha no seletor; Casa Eldorado e Ocean Park com Recebido, Total gasto e Saldo iguais aos da planilha; lançamento importado com conta, banco e forma certos; o Mestre não vê nada da importação.
+- 26/11/2026 · Importação da planilha · Gasto da Empresa no Caixa geral igual às saídas de ADM e Externo da planilha, depois de apagar um teste antigo.
+- 27/11/2026 · Ajustes da importação · Saldos dos bancos iguais aos da planilha depois de regravar pelo script; Aporte de sócio fora da receita no DRE; funcionários e sócios fora da lista de fornecedores (M J GESSO com um nome só); nome do funcionário na descrição; Lançar nota oferece Aporte de sócio; contrato e parcelas das obras importadas cadastrados pelo app.
+- 27/11/2026 · Caixa geral · Tarifas com a forma Débito automático, que também aparece no Lançar nota.
+- 27/11/2026 · Caixa geral · Tocar na Empresa (sem obra) abre só a lista das notas dela, com a obra do topo inalterada.
+- 27/11/2026 · Financeiro · Aporte de sócio só aparece no Lançar nota quando a obra é a Empresa.
+- 27/11/2026 · Financeiro · No Lançar nota, a Conta que sai da lista (aporte depois de trocar a obra) fica marcada no campo e não salva; nota normal continua salvando.

@@ -23,6 +23,9 @@ export function obrasDoSeletor(obras) {
   return obras.filter((o) => !o.interna && o.situacao !== 'Concluída')
 }
 
+// A obra interna "Empresa (sem obra)": nunca vira obra atual, mas recebe aporte e as notas sem obra.
+export const idDaEmpresa = (obras) => obras.find((o) => o.interna)?.id ?? null
+
 // Volta na obra guardada, se ela ainda estiver na lista; senão, a primeira.
 export function obraInicial(lista, guardada) {
   if (guardada && lista.some((o) => o.id === guardada)) return guardada

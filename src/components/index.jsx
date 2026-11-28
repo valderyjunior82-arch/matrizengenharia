@@ -235,7 +235,7 @@ export function Formulario({ campos, inicial, listas = {}, rotuloSalvar = 'Salva
 
   const enviar = async (e) => {
     e.preventDefault()
-    const achados = validar(campos, valores)
+    const achados = validar(campos, valores, listas)
     setErros(achados)
     if (Object.keys(achados).length) return
     setSalvando(true)

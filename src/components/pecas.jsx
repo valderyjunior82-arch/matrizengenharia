@@ -160,7 +160,7 @@ export function TabelaFluxo({ fluxo }) {
 // tocar num lançamento chama onAbrir (quando a tela permite abrir).
 export function TabelaDRE({ d, onAbrir, obraDe }) {
   const [aberta, setAberta] = useState(null)
-  if (!d.receitas.length && !d.despesas.length && !d.pagoPeloCliente.itens.length) {
+  if (!d.receitas.length && !d.despesas.length && !d.pagoPeloCliente.itens.length && !d.aportes.itens.length) {
     return <div className="aviso">Nenhum lançamento neste período.</div>
   }
   const linhaItem = (l) => (
@@ -196,6 +196,13 @@ export function TabelaDRE({ d, onAbrir, obraDe }) {
           <div className="dre-grupo"><span className="mono">Pago direto pelo cliente</span><span className="valor muted">{brl(d.pagoPeloCliente.total)}</span></div>
           <div className="aviso">Entra no gasto da obra, mas não no resultado: o dinheiro não passou pelo seu caixa.</div>
           {conta('c', { conta: 'Notas pagas pelo cliente', total: d.pagoPeloCliente.total, itens: d.pagoPeloCliente.itens })}
+        </>
+      )}
+      {d.aportes.itens.length > 0 && (
+        <>
+          <div className="dre-grupo"><span className="mono">Aporte de sócio</span><span className="valor muted">{brl(d.aportes.total)}</span></div>
+          <div className="aviso">Entrou no banco, mas não é receita: fica fora do resultado.</div>
+          {conta('a', { conta: 'Aportes', total: d.aportes.total, itens: d.aportes.itens })}
         </>
       )}
     </>

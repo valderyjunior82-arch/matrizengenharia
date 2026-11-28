@@ -355,7 +355,7 @@ export const obterLancamento = (id) => responder(() => lancamentoDaObra(id))
 export const salvarLancamento = (quem, id, valores, foto = null) => responder(() => {
   exigirEngenheiro(quem, 'lança notas')
   const anterior = id ? lancamentoDaObra(id) : null
-  const { campos, erro } = camposDaNota(valores, exigirObra(), anterior)
+  const { campos, erro } = camposDaNota(valores, exigirObra(), anterior, db.obras.find((o) => o.interna).id)
   if (erro) throw new Error(erro)
   const obraId = anterior?.obra_id ?? valores.obra_id
   if (!db.obras.some((o) => o.id === obraId)) throw new Error('Escolha a obra.')

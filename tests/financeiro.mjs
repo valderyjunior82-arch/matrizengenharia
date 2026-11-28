@@ -1,5 +1,6 @@
 // Contas do financeiro, com os lançamentos de exemplo ("hoje" = 23/11/2026).
 import {
+  contasDeEntrada, MSG_APORTE_SO_NA_EMPRESA,
   caixaGeral, camposDaNota, gastoPorConta, camposDaParcela, camposDoMovimento, camposDoRecebimento, saldosPorBanco, dre, filtrarLancamentos, fluxoDeCaixa, pagoDoContrato, resumoObra,
   situacaoParcela, ultimosMeses, MSG_CONTRATO_COM_PAGAMENTO, erroValorDoContrato, pagamentosDoContrato,
 } from '../src/lib/financeiro.js'
@@ -64,6 +65,14 @@ conferir('DRE: resultado = receitas − despesas do engenheiro', d.resultado, 74
 conferir('DRE: nota paga pelo cliente fica à parte', d.pagoPeloCliente.total, 186.4)
 conferir('DRE: cada conta traz os lançamentos que a formam', d.despesas[0].itens.map((l) => l.id), ['l10', 'l13', 'l12'])
 conferir('DRE desde o começo soma outubro também', dre(daObra('o1'), null).totalReceitas, 66000)
+// Decisão de 26/11: aporte de sócio entra no banco, mas não é receita.
+{
+  const aporte = { id: 'ap1', obra_id: 'o3', data: '2026-11-10', tipo: 'Entrada', categoria: 'Aporte de sócio', situacao: 'Realizado', valor: 1328, banco: 'Inter' }
+  const da = dre([aporte], '2026-11')
+  conferir('aporte de sócio fica fora das receitas e do resultado', [da.totalReceitas, da.resultado, da.receitas.length], [0, 0, 0])
+  conferir('aporte de sócio aparece à parte no DRE', [da.aportes.total, da.aportes.itens.length], [1328, 1])
+  conferir('aporte de sócio soma no saldo do banco', saldosPorBanco([aporte], []).bancos.find((b) => b.banco === 'Inter').saldo, 1328)
+}
 conferir('DRE da empresa junta todas as obras (Combustível da Empresa)', dre(mockLancamentos, '2026-11').despesas.find((c) => c.conta === 'Combustível').total, 280)
 
 // Achado da revisão de 25/11: "Onde foi o dinheiro" deixava de fora a nota paga pelo Cliente.
@@ -85,6 +94,14 @@ conferir('nota: valor em reais vira número, texto aparado', [n1.valor, n1.forne
 conferir('nota de entrada não tem "pago por"', camposDaNota({ ...nota, tipo: 'Entrada', categoria: 'Recebimento do cliente', banco: 'Inter' }, 'o1').campos.pago_por, null)
 conferir('conta de saída numa entrada é recusada', camposDaNota({ ...nota, tipo: 'Entrada' }, 'o1').erro, 'Escolha uma conta da lista.')
 conferir('nota de outra obra sai sem a frente da obra do seletor', camposDaNota({ ...nota, obra_id: 'o-empresa' }, 'o1').campos.frente_id, null)
+// Decisão de 27/11: aporte de sócio só na Empresa (em obra de cliente viraria "Recebido" do cliente).
+{
+  const aporte = { ...nota, tipo: 'Entrada', categoria: 'Aporte de sócio', banco: 'Inter' }
+  conferir('aporte de sócio em obra de cliente é recusado', camposDaNota(aporte, 'o1', null, 'o-empresa').erro, MSG_APORTE_SO_NA_EMPRESA)
+  conferir('aporte de sócio na Empresa passa', camposDaNota({ ...aporte, obra_id: 'o-empresa' }, 'o1', null, 'o-empresa').campos.categoria, 'Aporte de sócio')
+  conferir('editar aporte da Empresa passa', camposDaNota(aporte, 'o1', { obra_id: 'o-empresa', situacao: 'Realizado' }, 'o-empresa').erro, undefined)
+  conferir('Lançar nota só oferece aporte na Empresa', [contasDeEntrada(false).includes('Aporte de sócio'), contasDeEntrada(true).includes('Aporte de sócio')], [false, true])
+}
 conferir('valor zero é recusado', camposDaNota({ ...nota, valor: '0' }, 'o1').erro, 'O valor precisa ser maior que zero.')
 conferir('editar uma parcela não muda a situação', camposDaNota({ ...nota, tipo: 'Entrada', categoria: 'Recebimento do cliente' }, 'o1', { obra_id: 'o1', situacao: 'Previsto' }).campos.situacao, 'Previsto')
 // ---------- bancos ----------

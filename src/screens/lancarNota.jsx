@@ -10,7 +10,8 @@ import {
 } from '../lib/dados.js'
 import { useCarregar, juntar } from '../lib/usarDados.js'
 import { CAMPOS_NOTA } from '../lib/formularios.js'
-import { vinculosValem } from '../lib/financeiro.js'
+import { contasDeEntrada, vinculosValem } from '../lib/financeiro.js'
+import { idDaEmpresa } from '../lib/escopo.js'
 import { brl } from '../lib/formato.js'
 import { avisar, BotaoVoltar, Cartao, Carregando, comprimirFoto, ErroCarga, Folha, Formulario, Icon } from '../components/index.jsx'
 
@@ -46,6 +47,7 @@ export default function LancarNota({ goto, voltar: volta, params = {}, profile }
     materiais: daObra ? data.materiais.map((m) => ({ valor: m.id, rotulo: m.item })) : [],
     contratos: daObra ? data.contratos.map((c) => ({ valor: c.id, rotulo: `${c.empreiteiro} · ${servico(c.frente_id)}` })) : [],
     fornecedores: data.fornecedores.map((f) => f.nome),
+    contasEntrada: contasDeEntrada((anterior?.obra_id ?? obraEscolhida) === idDaEmpresa(todas)).map((c) => ({ valor: c, rotulo: c })),
   }
   const campos = anterior ? CAMPOS_NOTA.filter((c) => c.nome !== 'obra_id') : CAMPOS_NOTA
   const inicial = anterior

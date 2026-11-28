@@ -8,7 +8,7 @@
 // opcoesDe: nome da lista que a tela injeta (ex.: as frentes da obra atual).
 import {
   SITUACOES_OBRA, SITUACOES_FRENTE, SITUACOES_MATERIAL, PEDIDO, TIPOS_LANCAMENTO,
-  CONTAS_ENTRADA, CONTAS_SAIDA, PAGO_POR, FORMAS_PAGAMENTO, BANCOS,
+  CONTAS_SAIDA, PAGO_POR, FORMAS_PAGAMENTO, BANCOS,
 } from './vocabulario.js'
 
 export const CAMPOS_OBRA = [
@@ -98,7 +98,8 @@ export const CAMPOS_NOTA = [
   { nome: 'tipo', rotulo: 'Tipo', tipo: 'lista', opcoes: TIPOS_LANCAMENTO, obrigatorio: true, padrao: 'Saída' },
   // O mesmo campo com duas listas: só a do tipo escolhido aparece (e só ela é cobrada).
   { nome: 'categoria', rotulo: 'Conta', tipo: 'lista', opcoes: CONTAS_SAIDA, obrigatorio: true, visivel: ehSaida },
-  { nome: 'categoria', rotulo: 'Conta', tipo: 'lista', opcoes: CONTAS_ENTRADA, obrigatorio: true, visivel: (v) => !ehSaida(v) },
+  // Contas de entrada vêm da tela: Aporte de sócio só aparece quando a obra é a Empresa (contasDeEntrada).
+  { nome: 'categoria', rotulo: 'Conta', tipo: 'lista', opcoesDe: 'contasEntrada', obrigatorio: true, visivel: (v) => !ehSaida(v) },
   { nome: 'valor', rotulo: 'Valor', tipo: 'dinheiro', obrigatorio: true },
   { nome: 'fornecedor', rotulo: 'Fornecedor', tipo: 'texto', sugestoesDe: 'fornecedores' },
   // Frente, material e contrato somem quando a lista está vazia (ex.: "Empresa (sem obra)").
@@ -167,7 +168,9 @@ export function paraDinheiro(texto) {
 }
 
 // Devolve { campo: 'mensagem' } só com o que está errado. Vazio = pode salvar.
-export function validar(campos, valores) {
+// `listas`: as listas que a tela injeta (opcoesDe). Com elas, lista obrigatória também confere o valor
+// (ex.: Aporte de sócio escolhido na Empresa e a obra trocada depois: a Conta sai da lista).
+export function validar(campos, valores, listas = null) {
   const erros = {}
   for (const c of camposVisiveis(campos, valores)) {
     const bruto = valores[c.nome]
@@ -184,6 +187,8 @@ export function validar(campos, valores) {
       else if (c.max !== undefined && n > c.max) erros[c.nome] = `Máximo ${c.max}.`
     }
     if (c.tipo === 'lista' && c.opcoes && !c.opcoes.includes(bruto)) erros[c.nome] = 'Escolha uma opção da lista.'
+    const injetada = c.opcoesDe && c.obrigatorio && listas?.[c.opcoesDe]
+    if (c.tipo === 'lista' && injetada && !injetada.some((o) => o.valor === bruto)) erros[c.nome] = 'Escolha uma opção da lista.'
     if (c.tipo === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(bruto).trim())) erros[c.nome] = 'Email inválido. Ex.: nome@gmail.com'
     if (c.minCaracteres && String(bruto).length < c.minCaracteres) erros[c.nome] = `Mínimo ${c.minCaracteres} caracteres.`
     const antes = c.naoAntesDe && valores[c.naoAntesDe]

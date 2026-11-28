@@ -415,8 +415,8 @@ const idDaEmpresa = async () => ok(await banco().from('obras').select('id').eq('
 
 // Lançamento da obra do seletor ou da "Empresa (sem obra)": a Empresa não entra no seletor,
 // então a nota dela abre de qualquer obra. Só ela; outra obra de cliente continua fechada.
-async function lancamentoDaObra(id) {
-  const obras = [exigirObra(), await idDaEmpresa()]
+async function lancamentoDaObra(id, empresa = null) {
+  const obras = [exigirObra(), empresa ?? await idDaEmpresa()]
   const l = ok(await banco().from('lancamentos').select('*').eq('id', id).in('obra_id', obras).maybeSingle())
   if (!l) throw new Error('Este lançamento não existe mais nesta obra.')
   return l
@@ -429,8 +429,9 @@ export const obterLancamento = (id) => responder(() => lancamentoDaObra(id))
 // Ordem: arquivo → linha. Se a linha falhar, o arquivo que subiu é removido.
 export const salvarLancamento = (quem, id, valores, foto = null) => responder(async () => {
   exigirEngenheiro(quem, 'lança notas')
-  const anterior = id ? await lancamentoDaObra(id) : null
-  const { campos, erro } = camposDaNota(valores, exigirObra(), anterior)
+  const empresa = await idDaEmpresa()
+  const anterior = id ? await lancamentoDaObra(id, empresa) : null
+  const { campos, erro } = camposDaNota(valores, exigirObra(), anterior, empresa)
   if (erro) throw new Error(erro)
   const obraId = anterior?.obra_id ?? valores.obra_id
   if (!obraId) throw new Error('Escolha a obra.')

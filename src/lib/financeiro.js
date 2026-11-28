@@ -1,7 +1,7 @@
 // Contas do financeiro. Nada é guardado pronto: tudo sai dos lançamentos.
 // Dinheiro somado em centavos, para 0,1 + 0,2 não virar 0,30000000000000004.
 import { somarDias, segundaDaSemana } from './datas.js'
-import { BANCOS, CONTAS_ENTRADA, CONTAS_SAIDA, TIPOS_LANCAMENTO } from './vocabulario.js'
+import { BANCOS, CONTA_APORTE, CONTAS_ENTRADA, CONTAS_SAIDA, TIPOS_LANCAMENTO } from './vocabulario.js'
 import { paraDinheiro } from './formularios.js'
 import { brl } from './formato.js'
 
@@ -102,14 +102,20 @@ export const mesesDe = (lancamentos, hoje) =>
 // Nota de outra obra, ou da Empresa, sai sem eles. A tela e camposDaNota usam esta mesma regra.
 export const vinculosValem = (obraDaNota, obraAtualId) => obraDaNota === obraAtualId
 
+// Dinheiro de sócio é da empresa, não de obra: em obra de cliente viraria "Recebido" do cliente no painel.
+export const MSG_APORTE_SO_NA_EMPRESA = 'Aporte de sócio só se lança na Empresa (sem obra).'
+export const contasDeEntrada = (ehEmpresa) => (ehEmpresa ? CONTAS_ENTRADA : CONTAS_ENTRADA.filter((c) => c !== CONTA_APORTE))
+
 // O formulário de Lançar nota vira a linha do banco. Entrada não tem "pago por".
 // Frente, material e contrato só valem na obra do seletor (as listas são dela).
 // Editar não muda a situação: parcela continua parcela.
-export function camposDaNota(valores, obraAtualId, anterior = null) {
+// `empresaId`: a obra interna. Aporte de sócio só se lança nela (decisão de 27/11).
+export function camposDaNota(valores, obraAtualId, anterior = null, empresaId = null) {
   const tipo = valores.tipo
   const contas = tipo === 'Entrada' ? CONTAS_ENTRADA : CONTAS_SAIDA
   if (!TIPOS_LANCAMENTO.includes(tipo)) return { erro: 'Escolha Entrada ou Saída.' }
   if (!contas.includes(valores.categoria)) return { erro: 'Escolha uma conta da lista.' }
+  if (valores.categoria === CONTA_APORTE && (anterior?.obra_id ?? valores.obra_id) !== empresaId) return { erro: MSG_APORTE_SO_NA_EMPRESA }
   const valor = paraDinheiro(valores.valor)
   if (!(valor > 0)) return { erro: 'O valor precisa ser maior que zero.' }
   if (!valores.data) return { erro: 'Informe a data.' }
@@ -218,7 +224,9 @@ export function dre(lancamentos, mes) {
       return { conta, total: soma(itens), itens }
     })
     .filter((c) => c.itens.length)
-  const receitas = porConta(doPeriodo.filter(ehEntrada), CONTAS_ENTRADA)
+  // Aporte de sócio entrou no banco, mas não é receita: fica à parte, fora do resultado.
+  const receitas = porConta(doPeriodo.filter(ehEntrada), CONTAS_ENTRADA.filter((c) => c !== CONTA_APORTE))
+  const aportes = doPeriodo.filter((l) => ehEntrada(l) && l.categoria === CONTA_APORTE)
   const saidas = doPeriodo.filter((l) => l.tipo === 'Saída')
   const despesas = porConta(saidas.filter((l) => l.pago_por === 'Engenheiro'), CONTAS_SAIDA)
   const doCliente = saidas.filter((l) => l.pago_por === 'Cliente')
@@ -228,6 +236,7 @@ export function dre(lancamentos, mes) {
     receitas, despesas, totalReceitas, totalDespesas,
     resultado: menos(totalReceitas, totalDespesas),
     pagoPeloCliente: { total: soma(doCliente), itens: doCliente },
+    aportes: { total: soma(aportes), itens: aportes },
   }
 }
 
